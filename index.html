@@ -1,360 +1,1212 @@
 <!DOCTYPE html>
-<html lang="pt-BR" style="scroll-behavior: smooth;">
+<html lang="pt-BR" style="scroll-behavior:smooth;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FloodView | Sistema Inteligente de Gestão e Alerta Hídrico</title>
-    
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <meta name="description" content="FloodView — sistema local de monitoramento e alerta de alagamentos com ESP32, sensor de nível, API e dashboard em tempo real.">
+    <title>FloodView | Monitoramento de Alagamentos</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 
     <style>
         :root {
-            --primary-color: #0d6efd;
-            --secondary-color: #0043a8;
-            --accent-color: #00d2ff;
+            --ink: #102026;
+            --paper: #f2f0e9;
+            --white: #ffffff;
+            --blue: #1c586e;
+            --blue-deep: #0d3341;
+            --cyan: #80c8d8;
+            --line: rgba(16, 32, 38, .15);
+            --muted: #66777d;
+            --danger: #c84d42;
         }
-        
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            color: var(--ink);
+            background: var(--paper);
             overflow-x: hidden;
         }
 
+        ::selection {
+            background: var(--blue);
+            color: #fff;
+        }
+
+        a {
+            color: inherit;
+        }
+
         .navbar {
-            background-color: rgba(33, 37, 41, 0.9) !important;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
+            min-height: 78px;
+            background: rgba(242, 240, 233, .94);
+            border-bottom: 1px solid var(--line);
+            backdrop-filter: blur(14px);
         }
 
         .navbar-brand {
+            font-size: 1.12rem;
             font-weight: 800;
-            letter-spacing: 1px;
+            letter-spacing: -.02em;
+        }
+
+        .brand-mark {
+            width: 34px;
+            height: 34px;
+            display: inline-grid;
+            place-items: center;
+            border: 1px solid var(--ink);
+            border-radius: 50%;
+            margin-right: .65rem;
         }
 
         .nav-link {
-            transition: color 0.3s ease;
+            font-size: .83rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--ink) !important;
+            padding-inline: .9rem !important;
         }
 
-        .nav-link:hover {
-            color: var(--accent-color) !important;
+        .nav-link::after {
+            content: "";
+            display: block;
+            width: 0;
+            height: 1px;
+            margin-top: .3rem;
+            background: var(--ink);
+            transition: width .25s ease;
         }
 
-        .hero-section {
-            background: linear-gradient(-45deg, #001F3F, #0052D4, #4364F7, #6FB1FC);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
+        .nav-link:hover::after,
+        .nav-link.active::after {
+            width: 100%;
+        }
+
+        .hero {
             min-height: 100vh;
-            color: white;
-            padding-top: 80px;
+            padding-top: 78px;
         }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .feature-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            border: none;
-            border-radius: 15px;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-        }
-
-        .icon-box {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background-color: rgba(13, 110, 253, 0.1);
-            color: var(--primary-color);
+        .hero-copy {
+            min-height: calc(100vh - 78px);
             display: flex;
             align-items: center;
-            justify-content: center;
+            background: var(--paper);
+            padding: 7vw;
+        }
+
+        .hero-photo {
+            min-height: calc(100vh - 78px);
+            position: relative;
+            background:
+                linear-gradient(rgba(5, 24, 31, .12), rgba(5, 24, 31, .12)),
+                url("https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=1600&q=88") center/cover no-repeat;
+        }
+
+        .hero-photo::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 41, 52, .18);
+            pointer-events: none;
+        }
+
+        .eyebrow {
+            display: flex;
+            align-items: center;
+            gap: .8rem;
+            margin-bottom: 1.7rem;
+            font-size: .76rem;
+            font-weight: 800;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+        }
+
+        .eyebrow::before {
+            content: "";
+            width: 42px;
+            height: 1px;
+            background: currentColor;
+        }
+
+        .hero-title {
+            max-width: 780px;
+            font-size: clamp(3.5rem, 7vw, 7.8rem);
+            line-height: .88;
+            letter-spacing: -.065em;
+            font-weight: 800;
+            margin-bottom: 2rem;
+        }
+
+        .hero-lead {
+            max-width: 560px;
+            font-size: clamp(1rem, 1.35vw, 1.22rem);
+            line-height: 1.65;
+            color: #425258;
+            margin-bottom: 2.2rem;
+        }
+
+        .btn-flood {
+            border-radius: 0;
+            padding: 1rem 1.45rem;
+            font-size: .78rem;
+            font-weight: 800;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+        }
+
+        .btn-flood-dark {
+            color: #fff;
+            background: var(--ink);
+            border: 1px solid var(--ink);
+        }
+
+        .btn-flood-dark:hover {
+            color: #fff;
+            background: var(--blue);
+            border-color: var(--blue);
+        }
+
+        .btn-flood-line {
+            border: 1px solid var(--ink);
+            color: var(--ink);
+            background: transparent;
+        }
+
+        .btn-flood-line:hover {
+            color: #fff;
+            background: var(--ink);
+        }
+
+        .status-card {
+            position: absolute;
+            z-index: 2;
+            right: 7%;
+            bottom: 8%;
+            width: min(340px, 82%);
+            color: var(--ink);
+            background: var(--paper);
+            border: 1px solid rgba(255,255,255,.38);
+            padding: 1.55rem;
+            box-shadow: 0 24px 70px rgba(0,0,0,.20);
+        }
+
+        .status-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .status-label {
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            font-weight: 800;
+        }
+
+        .status-online {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            font-size: .72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #3e8f69;
+        }
+
+        .status-number {
+            font-size: 4.2rem;
+            font-weight: 800;
+            letter-spacing: -.07em;
+            line-height: 1;
+            margin: 1.4rem 0 .35rem;
+        }
+
+        .status-unit {
+            color: var(--muted);
+            font-size: .9rem;
+        }
+
+        .status-level {
+            margin-top: 1.2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--line);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section {
+            padding: 9rem 0;
+        }
+
+        .section-white {
+            background: var(--white);
+        }
+
+        .section-blue {
+            background: var(--blue-deep);
+            color: #fff;
+        }
+
+        .section-kicker {
+            font-size: .76rem;
+            font-weight: 800;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: clamp(2.6rem, 5vw, 5.5rem);
+            line-height: .95;
+            letter-spacing: -.055em;
+            font-weight: 800;
+        }
+
+        .section-text {
+            color: var(--muted);
+            font-size: 1.06rem;
+            line-height: 1.8;
+        }
+
+        .section-blue .section-text {
+            color: rgba(255,255,255,.72);
+        }
+
+        .problem-image {
+            min-height: 620px;
+            background:
+                linear-gradient(rgba(7, 30, 38, .08), rgba(7, 30, 38, .08)),
+                url("https://images.unsplash.com/photo-1519692933481-e162a57d6721?auto=format&fit=crop&w=1400&q=88") center/cover no-repeat;
+        }
+
+        .problem-copy {
+            padding: 7vw;
+        }
+
+        .stat-row {
+            border-top: 1px solid var(--line);
+            margin-top: 3rem;
+        }
+
+        .stat-item {
+            padding: 1.8rem 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .stat-number {
+            font-size: 2.4rem;
+            line-height: 1;
+            font-weight: 800;
+            letter-spacing: -.04em;
+        }
+
+        .stat-caption {
+            color: var(--muted);
+            font-size: .9rem;
+        }
+
+        .flow {
+            border-top: 1px solid rgba(255,255,255,.22);
+        }
+
+        .flow-step {
+            position: relative;
+            min-height: 290px;
+            padding: 2rem 1.5rem;
+            border-right: 1px solid rgba(255,255,255,.22);
+            border-bottom: 1px solid rgba(255,255,255,.22);
+        }
+
+        .flow-step:last-child {
+            border-right: none;
+        }
+
+        .flow-index {
+            font-size: .72rem;
+            font-weight: 800;
+            letter-spacing: .12em;
+            opacity: .6;
+        }
+
+        .flow-icon {
             font-size: 2rem;
-            margin: 0 auto 20px auto;
+            margin: 2.2rem 0 1.3rem;
         }
 
-        .section-padding {
-            padding: 100px 0;
+        .flow-title {
+            font-size: 1.45rem;
+            font-weight: 700;
+            letter-spacing: -.025em;
         }
 
-        .footer-link {
+        .flow-text {
+            color: rgba(255,255,255,.68);
+            font-size: .93rem;
+            line-height: 1.65;
+        }
+
+        .feature {
+            height: 100%;
+            padding: 2rem 0 1rem;
+            border-top: 1px solid var(--line);
+        }
+
+        .feature-icon {
+            width: 52px;
+            height: 52px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--ink);
+            border-radius: 50%;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        .feature h3 {
+            font-size: 1.45rem;
+            font-weight: 700;
+            letter-spacing: -.025em;
+        }
+
+        .feature p {
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .tech-panel {
+            background: var(--ink);
+            color: #fff;
+            padding: 5rem;
+        }
+
+        .tech-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .tech-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.25rem 0;
+            border-bottom: 1px solid rgba(255,255,255,.18);
+        }
+
+        .tech-item span:first-child {
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
+        .tech-item span:last-child {
+            color: rgba(255,255,255,.55);
+            font-size: .85rem;
+        }
+
+        .architecture {
+            padding: 5rem;
+            border: 1px solid var(--line);
+            background: var(--paper);
+        }
+
+        .architecture-line {
+            margin-top: 3rem;
+        }
+
+        .architecture-node {
+            position: relative;
+            padding: 1.3rem 1rem;
+            border: 1px solid var(--ink);
+            background: transparent;
+            text-align: center;
+            font-size: .8rem;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .architecture-arrow {
+            display: grid;
+            place-items: center;
+            font-size: 1.3rem;
+            min-height: 58px;
+        }
+
+        .risk-table {
+            border-top: 1px solid var(--line);
+        }
+
+        .risk-row {
+            display: grid;
+            grid-template-columns: 90px 1fr 160px;
+            gap: 1rem;
+            align-items: center;
+            padding: 1.4rem 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .risk-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: -.03em;
+        }
+
+        .risk-name {
+            font-weight: 700;
+        }
+
+        .risk-tag {
+            justify-self: end;
+            font-size: .72rem;
+            letter-spacing: .1em;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: .5rem .75rem;
+            border: 1px solid var(--ink);
+        }
+
+        .team-card {
+            padding: 1.6rem 0;
+            border-top: 1px solid var(--line);
+        }
+
+        .team-name {
+            font-weight: 700;
+            letter-spacing: -.02em;
+            margin-bottom: .25rem;
+        }
+
+        .team-role {
+            color: var(--muted);
+            font-size: .85rem;
+        }
+
+        .cta {
+            padding: 9rem 0;
+            background: var(--cyan);
+        }
+
+        .cta-title {
+            font-size: clamp(3rem, 7vw, 7rem);
+            line-height: .9;
+            letter-spacing: -.065em;
+            font-weight: 800;
+        }
+
+        footer {
+            background: var(--ink);
+            color: #fff;
+            padding: 4.5rem 0 2rem;
+        }
+
+        footer a {
             text-decoration: none;
-            color: #adb5bd;
-            transition: color 0.3s ease;
+            color: rgba(255,255,255,.68);
         }
 
-        .footer-link:hover {
-            color: var(--accent-color);
+        footer a:hover {
+            color: #fff;
         }
 
-        .social-icon {
-            color: #adb5bd;
-            font-size: 1.5rem;
-            transition: color 0.3s ease, transform 0.3s ease;
+        .footer-label {
+            color: rgba(255,255,255,.42);
+            font-size: .72rem;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            font-weight: 800;
+            margin-bottom: 1rem;
         }
 
-        .social-icon:hover {
-            color: var(--accent-color);
-            transform: translateY(-3px);
+        .reveal {
+            opacity: 0;
+            transform: translateY(22px);
+            transition: opacity .75s ease, transform .75s ease;
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 991.98px) {
+            .hero-copy,
+            .hero-photo {
+                min-height: auto;
+            }
+
+            .hero-copy {
+                padding: 7rem 1.5rem 4.5rem;
+            }
+
+            .hero-photo {
+                min-height: 650px;
+            }
+
+            .section {
+                padding: 6rem 0;
+            }
+
+            .problem-image {
+                min-height: 480px;
+            }
+
+            .problem-copy,
+            .tech-panel,
+            .architecture {
+                padding: 3rem 1.5rem;
+            }
+
+            .flow-step {
+                border-right: none;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .navbar {
+                min-height: 70px;
+            }
+
+            .hero {
+                padding-top: 70px;
+            }
+
+            .hero-title {
+                font-size: 3.7rem;
+            }
+
+            .hero-photo {
+                min-height: 520px;
+            }
+
+            .status-card {
+                left: 7%;
+                right: 7%;
+                width: auto;
+            }
+
+            .risk-row {
+                grid-template-columns: 70px 1fr;
+            }
+
+            .risk-tag {
+                grid-column: 2;
+                justify-self: start;
+            }
+
+            .cta {
+                padding: 6rem 0;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto !important;
+            }
+
+            .reveal {
+                opacity: 1;
+                transform: none;
+                transition: none;
+            }
         }
     </style>
 </head>
-<body data-bs-spy="scroll" data-bs-target="#mainNav" tabindex="0">
+<body data-bs-spy="scroll" data-bs-target="#mainNav" data-bs-offset="90">
 
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm" id="mainNav">
-        <div class="container">
-            <a class="navbar-brand text-info" href="#inicio"><i class="fa-solid fa-water"></i> FloodView</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarResponsive">
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 fw-semibold">
-                    <li class="nav-item"><a class="nav-link" href="#inicio">Início</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#contexto">O Desafio</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#solucao">A Solução</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#beneficios">Benefícios</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#equipe">Equipe</a></li>
-                </ul>
-            </div>
+<nav class="navbar navbar-expand-lg fixed-top" id="mainNav">
+    <div class="container-fluid px-lg-5">
+        <a class="navbar-brand d-flex align-items-center" href="#inicio">
+            <span class="brand-mark"><i class="bi bi-water"></i></span>
+            FloodView
+        </a>
+
+        <button class="navbar-toggler border-0 shadow-none" type="button"
+                data-bs-toggle="collapse" data-bs-target="#navbarContent"
+                aria-controls="navbarContent" aria-expanded="false"
+                aria-label="Abrir navegação">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <ul class="navbar-nav ms-auto align-items-lg-center">
+                <li class="nav-item"><a class="nav-link" href="#problema">Problema</a></li>
+                <li class="nav-item"><a class="nav-link" href="#funcionamento">Como funciona</a></li>
+                <li class="nav-item"><a class="nav-link" href="#tecnologia">Tecnologia</a></li>
+                <li class="nav-item"><a class="nav-link" href="#equipe">Equipe</a></li>
+                <li class="nav-item ms-lg-3">
+                    <a class="btn btn-flood btn-flood-dark" href="#projeto">Ver projeto</a>
+                </li>
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
 
-    <header id="inicio" class="hero-section d-flex align-items-center">
-        <div class="container text-center">
-            <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    <h1 class="display-3 fw-bold mb-4" data-aos="fade-down" data-aos-duration="1000">
-                        Sistema Inteligente de Gestão e Alerta Hídrico
+<header class="hero" id="inicio">
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <div class="col-lg-6 hero-copy">
+                <div class="reveal">
+                    <div class="eyebrow">Boa Vista, Roraima</div>
+
+                    <h1 class="hero-title">
+                        Ver a água subir antes que ela vire um problema.
                     </h1>
-                    <p class="lead mb-5 fs-4" data-aos="fade-up" data-aos-duration="1200" data-aos-delay="200">
-                        Tecnologia de ponta, engenharia ágil e monitoramento de dados para prevenir alagamentos e proteger a infraestrutura urbana em Boa Vista e além.
+
+                    <p class="hero-lead">
+                        O FloodView é um protótipo de baixo custo que monitora o nível da água
+                        com ESP32 e envia as leituras para uma plataforma web local em tempo real.
                     </p>
-                    <div data-aos="zoom-in" data-aos-duration="1000" data-aos-delay="400">
-                        <a href="#contexto" class="btn btn-info btn-lg rounded-pill px-5 py-3 text-dark fw-bold me-3 shadow-lg">Entenda o Problema</a>
-                        <a href="#solucao" class="btn btn-outline-light btn-lg rounded-pill px-5 py-3 shadow-lg">Conheça o FloodView</a>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="#funcionamento" class="btn btn-flood btn-flood-dark">
+                            Como funciona
+                        </a>
+                        <a href="#tecnologia" class="btn btn-flood btn-flood-line">
+                            Conhecer a tecnologia
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 hero-photo">
+                <div class="status-card reveal">
+                    <div class="status-top">
+                        <span class="status-label">Ponto BV001</span>
+                        <span class="status-online">
+                            <span class="status-dot"></span>
+                            conectado
+                        </span>
+                    </div>
+
+                    <div class="status-number">37,4</div>
+                    <div class="status-unit">centímetros de água</div>
+
+                    <div class="status-level">
+                        <span class="status-label">Situação atual</span>
+                        <strong>Atenção</strong>
                     </div>
                 </div>
             </div>
         </div>
-    </header>
+    </div>
+</header>
 
-    <section id="contexto" class="section-padding bg-light">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-6 mb-4 mb-lg-0" data-aos="fade-right">
-                    <img src="https://images.unsplash.com/photo-1547683905-f686c993aae5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Cidade com chuva" class="img-fluid rounded-4 shadow-lg">
-                </div>
-                <div class="col-lg-6 px-lg-5" data-aos="fade-left">
-                    <h6 class="text-primary fw-bold text-uppercase mb-2">A Realidade</h6>
-                    <h2 class="display-6 fw-bold mb-4">A Vulnerabilidade das Periferias</h2>
-                    <p class="text-muted fs-5">
-                        Em Boa Vista, durante o rigoroso inverno amazônico, os bairros periféricos das zonas Oeste e Sul sofrem severamente. O relevo plano e o solo de baixa permeabilidade, aliados à insuficiência da drenagem pluvial, criam bolsões de retenção de água.
-                    </p>
-                    <p class="text-muted fs-5">
-                        As cheias causam o transbordo de fossas, e a ausência de conexão à rede coletora de esgoto faz com que a água acumulada misture-se com resíduos domésticos. O resultado é o isolamento de moradores, danos materiais e um grave risco de proliferação de doenças.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
+<main>
+    <section id="problema" class="section section-white p-0">
+        <div class="container-fluid p-0">
+            <div class="row g-0 align-items-stretch">
+                <div class="col-lg-6 problem-image"></div>
 
-    <section id="solucao" class="section-padding text-white" style="background-color: #121212;">
-        <div class="container text-center">
-            <div class="row justify-content-center mb-5">
-                <div class="col-lg-8" data-aos="fade-up">
-                    <h6 class="text-info fw-bold text-uppercase mb-2">Inovação e Tecnologia</h6>
-                    <h2 class="display-5 fw-bold mb-4">Apresentando o FloodView</h2>
-                    <p class="lead">
-                        Uma plataforma integrada que utiliza <strong>Internet das Coisas (IoT)</strong>, <strong>Ciência de Dados</strong> e <strong>Computação em Nuvem</strong> para criar um sistema de alerta precoce e mapeamento inteligente.
-                    </p>
-                </div>
-            </div>
+                <div class="col-lg-6 problem-copy d-flex align-items-center">
+                    <div class="reveal">
+                        <div class="section-kicker">O problema</div>
 
-            <div class="row g-4 mt-3">
-                <div class="col-md-4" data-aos="zoom-in" data-aos-delay="100">
-                    <div class="card bg-dark text-white h-100 border-secondary feature-card p-4">
-                        <i class="fa-solid fa-microchip text-info display-4 mb-3"></i>
-                        <h4 class="fw-bold">Sensores IoT</h4>
-                        <p class="text-light">Bueiros inteligentes com sensores de nível de água que detectam obstruções por lixo e volume pluviométrico em tempo real.</p>
-                    </div>
-                </div>
-                <div class="col-md-4" data-aos="zoom-in" data-aos-delay="200">
-                    <div class="card bg-dark text-white h-100 border-secondary feature-card p-4">
-                        <i class="fa-solid fa-leaf text-success display-4 mb-3"></i>
-                        <h4 class="fw-bold">Microdrenagem Sustentável</h4>
-                        <p class="text-light">Fomento a soluções como jardins de chuva urbanos e pavimentação drenante, acelerando a absorção em solos periféricos.</p>
-                    </div>
-                </div>
-                <div class="col-md-4" data-aos="zoom-in" data-aos-delay="300">
-                    <div class="card bg-dark text-white h-100 border-secondary feature-card p-4">
-                        <i class="fa-solid fa-shield-halved text-warning display-4 mb-3"></i>
-                        <h4 class="fw-bold">Gestão Descentralizada</h4>
-                        <p class="text-light">Sistemas de contenção e filtragem rápida de baixo custo para o tratamento local de efluentes residenciais.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+                        <h2 class="section-title mb-4">
+                            Alagamentos fazem parte da rotina de muitas áreas periféricas.
+                        </h2>
 
-    <section id="beneficios" class="section-padding bg-light">
-        <div class="container">
-            <div class="text-center mb-5" data-aos="fade-up">
-                <h6 class="text-primary fw-bold text-uppercase">Resultados</h6>
-                <h2 class="display-6 fw-bold">Benefícios Esperados</h2>
-            </div>
-            
-            <div class="row g-4 text-center">
-                <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="100">
-                    <div class="card feature-card h-100 shadow-sm p-4">
-                        <div class="icon-box"><i class="fa-solid fa-bell"></i></div>
-                        <h5 class="fw-bold">Reduzir Tempo de Resposta</h5>
-                        <p class="text-muted small">Alertas precoces sobre níveis críticos de alagamento, permitindo ação rápida da Defesa Civil.</p>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="200">
-                    <div class="card feature-card h-100 shadow-sm p-4">
-                        <div class="icon-box"><i class="fa-solid fa-heart-pulse"></i></div>
-                        <h5 class="fw-bold">Mitigar Riscos à Saúde</h5>
-                        <p class="text-muted small">Evita o transbordo de fossas em áreas inundáveis, reduzindo doenças de veiculação hídrica.</p>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="300">
-                    <div class="card feature-card h-100 shadow-sm p-4">
-                        <div class="icon-box"><i class="fa-solid fa-water"></i></div>
-                        <h5 class="fw-bold">Otimizar Escoamento</h5>
-                        <p class="text-muted small">Estruturas modulares que facilitam e aceleram a absorção da água da chuva no solo.</p>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="400">
-                    <div class="card feature-card h-100 shadow-sm p-4">
-                        <div class="icon-box"><i class="fa-solid fa-map-location-dot"></i></div>
-                        <h5 class="fw-bold">Inteligência de Dados</h5>
-                        <p class="text-muted small">Mapeamento digital em tempo real das áreas de maior vulnerabilidade para tomada de decisão.</p>
+                        <p class="section-text">
+                            Durante períodos de chuva intensa, pontos de Boa Vista podem acumular
+                            água rapidamente. Drenagem insuficiente, bueiros obstruídos e o relevo
+                            plano contribuem para a retenção da água nas ruas.
+                        </p>
+
+                        <p class="section-text mb-0">
+                            Em muitos casos, a situação só ganha atenção quando o alagamento já
+                            está acontecendo. O FloodView nasce como uma forma simples de registrar
+                            esse comportamento e emitir alertas locais com antecedência.
+                        </p>
+
+                        <div class="stat-row">
+                            <div class="stat-item row g-3 align-items-center">
+                                <div class="col-4">
+                                    <div class="stat-number">01</div>
+                                </div>
+                                <div class="col-8">
+                                    <div class="fw-bold mb-1">Ponto monitorado no protótipo</div>
+                                    <div class="stat-caption">
+                                        A primeira versão valida todo o fluxo do sensor ao painel.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="stat-item row g-3 align-items-center">
+                                <div class="col-4">
+                                    <div class="stat-number">Local</div>
+                                </div>
+                                <div class="col-8">
+                                    <div class="fw-bold mb-1">Sem dependência obrigatória da internet</div>
+                                    <div class="stat-caption">
+                                        O sistema funciona dentro da mesma rede Wi-Fi.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="section-padding border-top">
+    <section id="funcionamento" class="section section-blue">
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-5" data-aos="fade-right">
-                    <h2 class="fw-bold mb-4">Premissas de Engenharia e Design</h2>
-                    <p class="text-muted">A solução foi projetada sob rígidas restrições para garantir sua viabilidade no mundo real:</p>
-                    <ul class="list-group list-group-flush mt-4">
-                        <li class="list-group-item bg-transparent px-0 border-bottom">
-                            <i class="fa-solid fa-check text-success me-2"></i> <strong>Custo Escalonável:</strong> Hardware e materiais extremamente baratos para viabilidade em larga escala.
-                        </li>
-                        <li class="list-group-item bg-transparent px-0 border-bottom">
-                            <i class="fa-solid fa-check text-success me-2"></i> <strong>Resistência:</strong> Blindagem contra clima severo (calor e umidade amazônicos) e proteção anti-vandalismo.
-                        </li>
-                        <li class="list-group-item bg-transparent px-0 border-bottom">
-                            <i class="fa-solid fa-check text-success me-2"></i> <strong>Compliance Legal:</strong> Total alinhamento ao Plano Diretor e código ambiental do município de Boa Vista.
-                        </li>
-                    </ul>
+            <div class="row mb-5 align-items-end">
+                <div class="col-lg-7 reveal">
+                    <div class="section-kicker">Do sensor ao alerta</div>
+                    <h2 class="section-title mb-0">
+                        Um fluxo simples, completo e em tempo real.
+                    </h2>
                 </div>
-                <div class="col-lg-6 offset-lg-1 mt-5 mt-lg-0" data-aos="fade-left">
-                    <div class="p-5 bg-primary text-white rounded-4 shadow-lg text-center">
-                        <h3 class="fw-bold mb-3">Desenvolvimento Back-end e Front-end</h3>
-                        <p class="mb-0 fs-5">A infraestrutura tecnológica do FloodView é sustentada por automação industrial e integração com a nuvem, garantindo alta disponibilidade e resposta em milissegundos.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <section id="equipe" class="section-padding bg-dark text-white">
-        <div class="container">
-            <div class="text-center mb-5" data-aos="fade-down">
-                <h6 class="text-info fw-bold text-uppercase">Quem Somos</h6>
-                <h2 class="display-6 fw-bold">Equipe Desenvolvedora</h2>
-                <p class="mt-3 text-light">Projeto Integrador Interdisciplinar 1 - Curso Superior de Tecnologia em Análise e Desenvolvimento de Sistemas</p>
-            </div>
-
-            <div class="row justify-content-center text-center g-4">
-                <div class="col-md-3 col-sm-6" data-aos="flip-left" data-aos-delay="100">
-                    <div class="p-4 border border-secondary rounded-4 bg-gradient h-100">
-                        <i class="fa-solid fa-user-astronaut display-4 text-secondary mb-3"></i>
-                        <h5 class="fw-bold">Guilherme H. De Castro Bobato</h5>
-                    </div>
-                </div>
-                <div class="col-md-3 col-sm-6" data-aos="flip-left" data-aos-delay="200">
-                    <div class="p-4 border border-secondary rounded-4 bg-gradient h-100">
-                        <i class="fa-solid fa-user-astronaut display-4 text-secondary mb-3"></i>
-                        <h5 class="fw-bold">Lucas Bernardes da Rocha</h5>
-                    </div>
-                </div>
-                <div class="col-md-3 col-sm-6" data-aos="flip-left" data-aos-delay="300">
-                    <div class="p-4 border border-secondary rounded-4 bg-gradient h-100">
-                        <i class="fa-solid fa-user-astronaut display-4 text-secondary mb-3"></i>
-                        <h5 class="fw-bold">Luiz Augusto Okada Mioto da Silva</h5>
-                    </div>
-                </div>
-                <div class="col-md-3 col-sm-6" data-aos="flip-left" data-aos-delay="400">
-                    <div class="p-4 border border-secondary rounded-4 bg-gradient h-100">
-                        <i class="fa-solid fa-user-astronaut display-4 text-secondary mb-3"></i>
-                        <h5 class="fw-bold">Ruan Marcelo Ramacioti Luz</h5>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-  <footer class="bg-black text-light pt-5 pb-4 border-top border-secondary">
-        <div class="container">
-            <div class="row g-4 mb-4">
-                <div class="col-lg-5 col-md-6">
-                    <h4 class="text-info fw-bold mb-3"><i class="fa-solid fa-water"></i> FloodView</h4>
-                    <p class="text-white small pe-lg-5">
-                        Sistema Inteligente de Gestão e Alerta Hídrico. Nosso objetivo é utilizar tecnologia de ponta para prever alagamentos, mitigar riscos à saúde pública e gerar inteligência de dados para uma gestão urbana mais eficiente.
+                <div class="col-lg-4 ms-auto mt-4 mt-lg-0 reveal">
+                    <p class="section-text mb-0">
+                        Cada etapa foi pensada para ser fácil de demonstrar, explicar e manter
+                        durante o desenvolvimento do protótipo.
                     </p>
                 </div>
-                
-                <div class="col-lg-3 col-md-6">
-                    <h5 class="fw-bold text-white mb-3">Navegação Rápida</h5>
-                    <ul class="list-unstyled">
-                        <li class="mb-2"><a href="#inicio" class="footer-link text-white">Início</a></li>
-                        <li class="mb-2"><a href="#contexto" class="footer-link text-white">O Desafio</a></li>
-                        <li class="mb-2"><a href="#solucao" class="footer-link text-white">A Solução</a></li>
-                        <li class="mb-2"><a href="#equipe" class="footer-link text-white">Nossa Equipe</a></li>
-                    </ul>
+            </div>
+
+            <div class="row g-0 flow reveal">
+                <div class="col-12 col-md-6 col-lg">
+                    <div class="flow-step">
+                        <div class="flow-index">01</div>
+                        <div class="flow-icon"><i class="bi bi-rulers"></i></div>
+                        <h3 class="flow-title">Sensor</h3>
+                        <p class="flow-text">
+                            Mede a distância até a superfície da água e permite calcular o nível.
+                        </p>
+                    </div>
                 </div>
 
-                <div class="col-lg-4 col-md-12">
-                    <h5 class="fw-bold text-white mb-3">Detalhes Institucionais</h5>
-                    <p class="text-white small mb-1"><strong>Instituição:</strong> SENAI Ribeirão Preto - SP (2026/1)</p>
-                    <p class="text-white small mb-1"><strong>Centro:</strong> (CE) Alexandre Figueira Rodrigues</p>
-                    <p class="text-white small mb-3"><strong>Docente Responsável:</strong> Prof. MSc. Gustavo M. N. Avellar</p>
-                    
-                    <div class="d-flex gap-3">
-                        <a href="https://github.com/Ruan-Marcelo/FloodView.git" class="social-icon text-white" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
-                        <a href="https://ruan-marcelo.github.io/FloodView/" class="social-icon text-white" aria-label="Website"><i class="fa-solid fa-globe"></i></a>
+                <div class="col-12 col-md-6 col-lg">
+                    <div class="flow-step">
+                        <div class="flow-index">02</div>
+                        <div class="flow-icon"><i class="bi bi-cpu"></i></div>
+                        <h3 class="flow-title">ESP32</h3>
+                        <p class="flow-text">
+                            Lê o sensor, calcula a medição e envia os dados pela rede Wi-Fi local.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg">
+                    <div class="flow-step">
+                        <div class="flow-index">03</div>
+                        <div class="flow-icon"><i class="bi bi-hdd-network"></i></div>
+                        <h3 class="flow-title">API</h3>
+                        <p class="flow-text">
+                            Recebe as leituras, classifica a situação e registra o histórico.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg">
+                    <div class="flow-step">
+                        <div class="flow-index">04</div>
+                        <div class="flow-icon"><i class="bi bi-window"></i></div>
+                        <h3 class="flow-title">Painel</h3>
+                        <p class="flow-text">
+                            Mostra o nível atual, o histórico e as mudanças em tempo real.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg">
+                    <div class="flow-step">
+                        <div class="flow-index">05</div>
+                        <div class="flow-icon"><i class="bi bi-bell"></i></div>
+                        <h3 class="flow-title">Alerta</h3>
+                        <p class="flow-text">
+                            Sinaliza quando o nível da água ultrapassa limites definidos.
+                        </p>
                     </div>
                 </div>
             </div>
-            
-            <div class="row border-top border-secondary pt-3 mt-3 text-center">
-                <div class="col-12">
-                    <p class="text-white small mb-0">&copy; 2026 FloodView. Todos os direitos reservados. Projeto Acadêmico Integrador.</p>
+        </div>
+    </section>
+
+    <section class="section section-white">
+        <div class="container">
+            <div class="row mb-5">
+                <div class="col-lg-7 reveal">
+                    <div class="section-kicker">O que o protótipo entrega</div>
+                    <h2 class="section-title">
+                        Tecnologia acessível aplicada a um problema real.
+                    </h2>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3 reveal">
+                    <article class="feature">
+                        <div class="feature-icon"><i class="bi bi-broadcast"></i></div>
+                        <h3>Tempo real</h3>
+                        <p>
+                            O painel recebe novas leituras automaticamente e mostra a situação
+                            atual sem precisar recarregar a página.
+                        </p>
+                    </article>
+                </div>
+
+                <div class="col-md-6 col-lg-3 reveal">
+                    <article class="feature">
+                        <div class="feature-icon"><i class="bi bi-router"></i></div>
+                        <h3>Funcionamento local</h3>
+                        <p>
+                            ESP32 e servidor comunicam-se dentro da rede Wi-Fi, sem depender
+                            obrigatoriamente de serviços em nuvem.
+                        </p>
+                    </article>
+                </div>
+
+                <div class="col-md-6 col-lg-3 reveal">
+                    <article class="feature">
+                        <div class="feature-icon"><i class="bi bi-database"></i></div>
+                        <h3>Histórico</h3>
+                        <p>
+                            As medições ficam armazenadas para visualizar a evolução do nível
+                            da água ao longo do tempo.
+                        </p>
+                    </article>
+                </div>
+
+                <div class="col-md-6 col-lg-3 reveal">
+                    <article class="feature">
+                        <div class="feature-icon"><i class="bi bi-volume-up"></i></div>
+                        <h3>Alertas locais</h3>
+                        <p>
+                            O projeto pode sinalizar situações de risco no navegador e também
+                            por LED e buzzer ligados ao ESP32.
+                        </p>
+                    </article>
                 </div>
             </div>
         </div>
-    </footer>
+    </section>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script>
-        AOS.init({
-            once: true,
-            offset: 100
+    <section id="tecnologia" class="section">
+        <div class="container">
+            <div class="row g-0 align-items-stretch">
+                <div class="col-lg-5 reveal">
+                    <div class="tech-panel h-100">
+                        <div class="section-kicker">Tecnologia</div>
+
+                        <h2 class="display-5 fw-bold mb-4" style="letter-spacing:-.045em;">
+                            Uma pilha pequena, suficiente para fazer o projeto funcionar de verdade.
+                        </h2>
+
+                        <ul class="tech-list">
+                            <li class="tech-item">
+                                <span>ESP32</span>
+                                <span>Hardware</span>
+                            </li>
+                            <li class="tech-item">
+                                <span>Sensor de nível</span>
+                                <span>Medição</span>
+                            </li>
+                            <li class="tech-item">
+                                <span>FastAPI</span>
+                                <span>Backend</span>
+                            </li>
+                            <li class="tech-item">
+                                <span>SQLite</span>
+                                <span>Banco local</span>
+                            </li>
+                            <li class="tech-item">
+                                <span>WebSocket</span>
+                                <span>Tempo real</span>
+                            </li>
+                            <li class="tech-item">
+                                <span>Bootstrap</span>
+                                <span>Interface</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-lg-7 reveal">
+                    <div class="architecture h-100">
+                        <div class="section-kicker">Arquitetura do sistema</div>
+
+                        <h2 class="display-6 fw-bold mb-3" style="letter-spacing:-.045em;">
+                            Tudo acontece dentro da mesma rede.
+                        </h2>
+
+                        <p class="section-text">
+                            O protótipo foi desenhado para reduzir dependências e facilitar a
+                            apresentação. O computador funciona como servidor local e recebe os
+                            dados enviados pelo ESP32.
+                        </p>
+
+                        <div class="architecture-line">
+                            <div class="architecture-node">
+                                Sensor
+                            </div>
+
+                            <div class="architecture-arrow">
+                                <i class="bi bi-arrow-down"></i>
+                            </div>
+
+                            <div class="architecture-node">
+                                ESP32
+                            </div>
+
+                            <div class="architecture-arrow">
+                                <i class="bi bi-arrow-down"></i>
+                            </div>
+
+                            <div class="architecture-node">
+                                API + SQLite
+                            </div>
+
+                            <div class="architecture-arrow">
+                                <i class="bi bi-arrow-down"></i>
+                            </div>
+
+                            <div class="architecture-node">
+                                Dashboard + alerta
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="projeto" class="section section-white">
+        <div class="container">
+            <div class="row align-items-start">
+                <div class="col-lg-5 reveal">
+                    <div class="section-kicker">Níveis de monitoramento</div>
+                    <h2 class="section-title mb-4">
+                        Informação fácil de entender.
+                    </h2>
+                    <p class="section-text">
+                        O painel transforma a leitura do sensor em estados simples.
+                        Os limites abaixo são exemplos para a demonstração e podem ser
+                        ajustados conforme o ponto monitorado.
+                    </p>
+                </div>
+
+                <div class="col-lg-6 ms-auto mt-5 mt-lg-0 reveal">
+                    <div class="risk-table">
+                        <div class="risk-row">
+                            <div class="risk-value">0–20</div>
+                            <div>
+                                <div class="risk-name">Normal</div>
+                                <div class="small text-secondary">Nível baixo</div>
+                            </div>
+                            <div class="risk-tag">Operação normal</div>
+                        </div>
+
+                        <div class="risk-row">
+                            <div class="risk-value">20–40</div>
+                            <div>
+                                <div class="risk-name">Atenção</div>
+                                <div class="small text-secondary">Elevação observada</div>
+                            </div>
+                            <div class="risk-tag">Acompanhar</div>
+                        </div>
+
+                        <div class="risk-row">
+                            <div class="risk-value">40–60</div>
+                            <div>
+                                <div class="risk-name">Alerta</div>
+                                <div class="small text-secondary">Nível elevado</div>
+                            </div>
+                            <div class="risk-tag">Alerta ativo</div>
+                        </div>
+
+                        <div class="risk-row">
+                            <div class="risk-value">60+</div>
+                            <div>
+                                <div class="risk-name">Crítico</div>
+                                <div class="small text-secondary">Situação de risco</div>
+                            </div>
+                            <div class="risk-tag">Ação imediata</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="equipe" class="section">
+        <div class="container">
+            <div class="row mb-5">
+                <div class="col-lg-6 reveal">
+                    <div class="section-kicker">Equipe</div>
+                    <h2 class="section-title">
+                        Projeto desenvolvido em conjunto.
+                    </h2>
+                </div>
+
+                <div class="col-lg-4 ms-auto mt-4 mt-lg-0 reveal">
+                    <p class="section-text">
+                        Projeto Integrador Interdisciplinar 1 — Análise e Desenvolvimento de Sistemas.
+                    </p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3 reveal">
+                    <div class="team-card">
+                        <div class="team-name">Guilherme H. De Castro Bobato</div>
+                        <div class="team-role">Equipe FloodView</div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-3 reveal">
+                    <div class="team-card">
+                        <div class="team-name">Lucas Bernardes da Rocha</div>
+                        <div class="team-role">Equipe FloodView</div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-3 reveal">
+                    <div class="team-card">
+                        <div class="team-name">Luiz Augusto Okada Mioto da Silva</div>
+                        <div class="team-role">Equipe FloodView</div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-3 reveal">
+                    <div class="team-card">
+                        <div class="team-name">Ruan Marcelo Ramacioti Luz</div>
+                        <div class="team-role">Equipe FloodView</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <div class="container">
+            <div class="row align-items-end">
+                <div class="col-lg-8 reveal">
+                    <div class="section-kicker">FloodView</div>
+                    <h2 class="cta-title mb-0">
+                        Medir.<br>
+                        Entender.<br>
+                        Alertar.
+                    </h2>
+                </div>
+
+                <div class="col-lg-3 ms-auto mt-5 mt-lg-0 reveal">
+                    <p class="mb-4" style="line-height:1.7;">
+                        Um protótipo simples para transformar o nível da água em informação útil.
+                    </p>
+
+                    <a href="https://github.com/Ruan-Marcelo/FloodView.git"
+                       class="btn btn-flood btn-flood-dark w-100"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        Ver no GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <div class="container">
+        <div class="row g-5">
+            <div class="col-lg-5">
+                <a class="navbar-brand d-inline-flex align-items-center text-white mb-3" href="#inicio">
+                    <span class="brand-mark border-light"><i class="bi bi-water"></i></span>
+                    FloodView
+                </a>
+
+                <p class="mb-0" style="max-width:520px;color:rgba(255,255,255,.62);line-height:1.75;">
+                    Sistema local de monitoramento de nível da água desenvolvido como
+                    projeto acadêmico, integrando sensor, ESP32, backend e interface web.
+                </p>
+            </div>
+
+            <div class="col-6 col-lg-2 ms-lg-auto">
+                <div class="footer-label">Navegação</div>
+                <div class="d-flex flex-column gap-2">
+                    <a href="#problema">Problema</a>
+                    <a href="#funcionamento">Como funciona</a>
+                    <a href="#tecnologia">Tecnologia</a>
+                    <a href="#equipe">Equipe</a>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3">
+                <div class="footer-label">Projeto</div>
+                <div class="d-flex flex-column gap-2">
+                    <span style="color:rgba(255,255,255,.68);">SENAI Ribeirão Preto - SP</span>
+                    <span style="color:rgba(255,255,255,.68);">(CE) Alexandre Figueira Rodrigues</span>
+                    <a href="https://github.com/Ruan-Marcelo/FloodView.git" target="_blank" rel="noopener noreferrer">
+                        GitHub
+                    </a>
+                    <a href="https://ruan-marcelo.github.io/FloodView/" target="_blank" rel="noopener noreferrer">
+                        Site do projeto
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-5 pt-4" style="border-top:1px solid rgba(255,255,255,.15);">
+            <div class="col-md-6">
+                <small style="color:rgba(255,255,255,.46);">
+                    © 2026 FloodView. Projeto acadêmico integrador.
+                </small>
+            </div>
+
+            <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                <small style="color:rgba(255,255,255,.46);">
+                    Boa Vista, Roraima
+                </small>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add("visible");
+                observer.unobserve(entry.target);
+            }
         });
-    </script>
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll(".reveal").forEach((element) => observer.observe(element));
+
+    const nav = document.querySelector("#navbarContent");
+    document.querySelectorAll("#navbarContent .nav-link").forEach((link) => {
+        link.addEventListener("click", () => {
+            const instance = bootstrap.Collapse.getInstance(nav);
+            if (instance) instance.hide();
+        });
+    });
+</script>
+
 </body>
 </html>
