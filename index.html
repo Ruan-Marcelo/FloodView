@@ -10,7 +10,25 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 
     <style>
-        /* Estilo do sublinhado animado para os links da navbar */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #000;
+            color: #fff;
+            padding: 8px 16px;
+            z-index: 1100;
+            transition: top 0.2s ease;
+        }
+        .skip-link:focus {
+            top: 0;
+        }
+
+        a:focus-visible, button:focus-visible {
+            outline: 3px solid #0d6efd !important;
+            outline-offset: 2px !important;
+        }
+
         #navbarContent .nav-link {
             position: relative;
             text-decoration: none;
@@ -35,10 +53,12 @@
 </head>
 <body class="bg-light text-dark" data-bs-spy="scroll" data-bs-target="#mainNav" data-bs-offset="90">
 
-<nav class="navbar navbar-expand-lg bg-light border-bottom sticky-top" id="mainNav">
+<a href="#main-content" class="skip-link">Ir para o conteúdo principal</a>
+
+<nav class="navbar navbar-expand-lg bg-light border-bottom sticky-top" id="mainNav" aria-label="Navegação principal">
     <div class="container py-2">
-        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="#inicio">
-            <span class="border rounded-circle d-inline-flex align-items-center justify-content-center p-2 lh-1">
+        <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="#inicio" aria-label="FloodView - Página Inicial">
+            <span class="border rounded-circle d-inline-flex align-items-center justify-content-center p-2 lh-1" aria-hidden="true">
                 <i class="bi bi-water"></i>
             </span>
             FloodView
@@ -47,7 +67,7 @@
         <button class="navbar-toggler border-0 shadow-none" type="button"
                 data-bs-toggle="collapse" data-bs-target="#navbarContent"
                 aria-controls="navbarContent" aria-expanded="false"
-                aria-label="Abrir navegação">
+                aria-label="Alternar menu de navegação">
             <span class="navbar-toggler-icon"></span>
         </button>
 
@@ -65,12 +85,14 @@
     </div>
 </nav>
 
-<header id="inicio">
+<header id="inicio" class="bg-light">
     <div class="container-fluid p-0">
         <div class="row g-0 min-vh-100">
             <div class="col-lg-6 d-flex align-items-center">
                 <div class="p-4 p-md-5">
-                    <span class="badge text-bg-secondary mb-4 fs-6"><i class="bi bi-geo-alt-fill"></i> Boa Vista, Roraima</span>
+                    <span class="badge text-bg-dark mb-4 fs-6">
+                        <i class="bi bi-geo-alt-fill me-1" aria-hidden="true"></i> Boa Vista, Roraima
+                    </span>
 
                     <h1 class="display-1 fw-bold lh-1 mb-4">
                         Ver a água subir antes que ela vire um problema.
@@ -90,12 +112,12 @@
                         </a>
                     </div>
 
-                    <div class="card shadow-sm border-0 mt-5">
+                    <div class="card shadow-sm border-0 mt-5" aria-live="polite" aria-atomic="true">
                         <div class="card-body p-4">
                             <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
                                 <span class="small text-uppercase fw-bold text-secondary">Ponto BV001</span>
-                                <span class="badge text-bg-success">
-                                    <i class="bi bi-wifi me-1"></i> conectado
+                                <span class="badge text-bg-success d-flex align-items-center gap-1">
+                                    <i class="bi bi-wifi" aria-hidden="true"></i> Conectado
                                 </span>
                             </div>
 
@@ -104,7 +126,7 @@
 
                             <div class="d-flex justify-content-between align-items-center border-top pt-3">
                                 <span class="small text-uppercase fw-bold text-secondary">Situação atual</span>
-                                <strong>Atenção</strong>
+                                <strong class="text-warning-emphasis">Atenção</strong>
                             </div>
                         </div>
                     </div>
@@ -114,27 +136,27 @@
             <div class="col-lg-6">
                 <img class="w-100 h-100 object-fit-cover"
                      src="https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=1600&q=88"
-                     alt="Rua tomada por água após chuva forte">
+                     alt="Rua urbana totalmente coberta por água após tempestade forte">
             </div>
         </div>
     </div>
 </header>
 
-<main>
-    <section id="problema" class="bg-white border-top border-5 border-white">
+<main id="main-content">
+    <section id="problema" class="bg-white border-top border-5 border-white py-4" aria-labelledby="heading-problema">
         <div class="container-fluid p-0">
             <div class="row g-0 align-items-stretch">
                 <div class="col-lg-6">
                     <img class="w-100 h-100 object-fit-cover"
                          src="https://images.unsplash.com/photo-1519692933481-e162a57d6721?auto=format&fit=crop&w=1400&q=88"
-                         alt="Rua alagada durante período de chuva">
+                         alt="Carro e pedestres transitando em rua alagada em dia chuvoso">
                 </div>
 
                 <div class="col-lg-6 d-flex align-items-center">
                     <div class="p-4 p-md-5">
-                        <span class="badge text-bg-secondary mb-3 fs-6">O problema</span>
+                        <span class="badge text-bg-dark mb-3 fs-6">O problema</span>
 
-                        <h2 class="display-4 fw-bold lh-1 mb-4">
+                        <h2 id="heading-problema" class="display-4 fw-bold lh-1 mb-4">
                             Alagamentos fazem parte da rotina de muitas áreas periféricas.
                         </h2>
 
@@ -154,7 +176,7 @@
                             <div class="list-group-item px-0 py-4">
                                 <div class="row align-items-center">
                                     <div class="col-4">
-                                        <div class="display-6 fw-bold">01</div>
+                                        <div class="display-6 fw-bold" aria-hidden="true">01</div>
                                     </div>
                                     <div class="col-8">
                                         <div class="fw-bold">Ponto monitorado no protótipo</div>
@@ -166,7 +188,7 @@
                             <div class="list-group-item px-0 py-4">
                                 <div class="row align-items-center">
                                     <div class="col-4">
-                                        <div class="display-6 fw-bold">Local</div>
+                                        <div class="display-6 fw-bold" aria-hidden="true">Local</div>
                                     </div>
                                     <div class="col-8">
                                         <div class="fw-bold">Sem dependência obrigatória da internet</div>
@@ -181,12 +203,12 @@
         </div>
     </section>
 
-    <section id="funcionamento" class="bg-dark text-white py-5">
+    <section id="funcionamento" class="bg-dark text-white py-5" aria-labelledby="heading-funcionamento">
         <div class="container py-5">
             <div class="row mb-5 align-items-end">
                 <div class="col-lg-7">
-                    <span class="badge text-bg-secondary mb-3 fs-6">Do sensor ao alerta</span>
-                    <h2 class="display-4 fw-bold lh-1 mb-0">
+                    <span class="badge text-bg-light mb-3 fs-6">Do sensor ao alerta</span>
+                    <h2 id="heading-funcionamento" class="display-4 fw-bold lh-1 mb-0">
                         Um fluxo simples, completo e em tempo real.
                     </h2>
                 </div>
@@ -199,71 +221,71 @@
                 </div>
             </div>
 
-            <div class="row g-4">
-                <div class="col-12 col-md-6 col-lg">
+            <ol class="row g-4 list-unstyled p-0 m-0">
+                <li class="col-12 col-md-6 col-lg">
                     <div class="card h-100 bg-body-secondary text-dark border-0">
                         <div class="card-body p-4">
-                            <span class="badge text-bg-dark mb-4">01</span>
-                            <div class="display-6 mb-3"><i class="bi bi-rulers"></i></div>
+                            <span class="badge text-bg-dark mb-4">Etapa 01</span>
+                            <div class="display-6 mb-3" aria-hidden="true"><i class="bi bi-rulers"></i></div>
                             <h3 class="h4 fw-bold">Sensor</h3>
                             <p class="mb-0">Mede a distância até a superfície da água e permite calcular o nível.</p>
                         </div>
                     </div>
-                </div>
+                </li>
 
-                <div class="col-12 col-md-6 col-lg">
+                <li class="col-12 col-md-6 col-lg">
                     <div class="card h-100 bg-body-secondary text-dark border-0">
                         <div class="card-body p-4">
-                            <span class="badge text-bg-dark mb-4">02</span>
-                            <div class="display-6 mb-3"><i class="bi bi-cpu"></i></div>
+                            <span class="badge text-bg-dark mb-4">Etapa 02</span>
+                            <div class="display-6 mb-3" aria-hidden="true"><i class="bi bi-cpu"></i></div>
                             <h3 class="h4 fw-bold">ESP32</h3>
                             <p class="mb-0">Lê o sensor, calcula a medição e envia os dados pela rede Wi-Fi local.</p>
                         </div>
                     </div>
-                </div>
+                </li>
 
-                <div class="col-12 col-md-6 col-lg">
+                <li class="col-12 col-md-6 col-lg">
                     <div class="card h-100 bg-body-secondary text-dark border-0">
                         <div class="card-body p-4">
-                            <span class="badge text-bg-dark mb-4">03</span>
-                            <div class="display-6 mb-3"><i class="bi bi-hdd-network"></i></div>
+                            <span class="badge text-bg-dark mb-4">Etapa 03</span>
+                            <div class="display-6 mb-3" aria-hidden="true"><i class="bi bi-hdd-network"></i></div>
                             <h3 class="h4 fw-bold">API</h3>
                             <p class="mb-0">Recebe as leituras, classifica a situação e registra o histórico.</p>
                         </div>
                     </div>
-                </div>
+                </li>
 
-                <div class="col-12 col-md-6 col-lg">
+                <li class="col-12 col-md-6 col-lg">
                     <div class="card h-100 bg-body-secondary text-dark border-0 shadow-sm">
                         <div class="card-body p-4">
-                            <span class="badge text-bg-dark mb-4">04</span>
-                            <div class="display-6 mb-3"><i class="bi bi-window"></i></div>
+                            <span class="badge text-bg-dark mb-4">Etapa 04</span>
+                            <div class="display-6 mb-3" aria-hidden="true"><i class="bi bi-window"></i></div>
                             <h3 class="h4 fw-bold">Painel</h3>
                             <p class="mb-0">Mostra o nível atual, o histórico e as mudanças em tempo real.</p>
                         </div>
                     </div>
-                </div>
+                </li>
 
-                <div class="col-12 col-md-6 col-lg">
+                <li class="col-12 col-md-6 col-lg">
                     <div class="card h-100 bg-body-secondary text-dark border-0">
                         <div class="card-body p-4">
-                            <span class="badge text-bg-dark mb-4">05</span>
-                            <div class="display-6 mb-3"><i class="bi bi-bell"></i></div>
+                            <span class="badge text-bg-dark mb-4">Etapa 05</span>
+                            <div class="display-6 mb-3" aria-hidden="true"><i class="bi bi-bell"></i></div>
                             <h3 class="h4 fw-bold">Alerta</h3>
                             <p class="mb-0">Sinaliza quando o nível da água ultrapassa limites definidos.</p>
                         </div>
                     </div>
-                </div>
-            </div>
+                </li>
+            </ol>
         </div>
     </section>
 
-    <section class="bg-white py-5">
+    <section class="bg-white py-5" aria-labelledby="heading-recursos">
         <div class="container py-5">
             <div class="row mb-5">
                 <div class="col-lg-7">
-                    <span class="badge text-bg-secondary mb-3 fs-6">O que o protótipo entrega</span>
-                    <h2 class="display-4 fw-bold lh-1">
+                    <span class="badge text-bg-dark mb-3 fs-6">O que o protótipo entrega</span>
+                    <h2 id="heading-recursos" class="display-4 fw-bold lh-1">
                         Tecnologia acessível aplicada a um problema real.
                     </h2>
                 </div>
@@ -273,7 +295,7 @@
                 <div class="col-md-6 col-lg-3">
                     <article class="card h-100 border-0 shadow-sm">
                         <div class="card-body p-4">
-                            <div class="display-6 mb-4"><i class="bi bi-broadcast"></i></div>
+                            <div class="display-6 mb-4" aria-hidden="true"><i class="bi bi-broadcast"></i></div>
                             <h3 class="h4 fw-bold">Tempo real</h3>
                             <p class="text-secondary mb-0">O painel recebe novas leituras automaticamente e mostra a situação atual sem precisar recarregar a página.</p>
                         </div>
@@ -283,7 +305,7 @@
                 <div class="col-md-6 col-lg-3">
                     <article class="card h-100 border-0 shadow-sm">
                         <div class="card-body p-4">
-                            <div class="display-6 mb-4"><i class="bi bi-router"></i></div>
+                            <div class="display-6 mb-4" aria-hidden="true"><i class="bi bi-router"></i></div>
                             <h3 class="h4 fw-bold">Funcionamento local</h3>
                             <p class="text-secondary mb-0">ESP32 e servidor comunicam-se dentro da rede Wi-Fi, sem depender obrigatoriamente de serviços em nuvem.</p>
                         </div>
@@ -293,7 +315,7 @@
                 <div class="col-md-6 col-lg-3">
                     <article class="card h-100 border-0 shadow-sm">
                         <div class="card-body p-4">
-                            <div class="display-6 mb-4"><i class="bi bi-database"></i></div>
+                            <div class="display-6 mb-4" aria-hidden="true"><i class="bi bi-database"></i></div>
                             <h3 class="h4 fw-bold">Histórico</h3>
                             <p class="text-secondary mb-0">As medições ficam armazenadas para visualizar a evolução do nível da água ao longo do tempo.</p>
                         </div>
@@ -303,7 +325,7 @@
                 <div class="col-md-6 col-lg-3">
                     <article class="card h-100 border-0 shadow-sm">
                         <div class="card-body p-4">
-                            <div class="display-6 mb-4"><i class="bi bi-volume-up"></i></div>
+                            <div class="display-6 mb-4" aria-hidden="true"><i class="bi bi-volume-up"></i></div>
                             <h3 class="h4 fw-bold">Alertas locais</h3>
                             <p class="text-secondary mb-0">O projeto pode sinalizar situações de risco no navegador, avisos claros e rápidos e sons de alerta.</p>
                         </div>
@@ -313,25 +335,25 @@
         </div>
     </section>
 
-    <section id="tecnologia" class="py-5">
+    <section id="tecnologia" class="py-5" aria-labelledby="heading-tecnologia">
         <div class="container py-5">
             <div class="row g-4 align-items-stretch">
                 <div class="col-lg-5">
                     <div class="card h-100 text-bg-dark border-0">
                         <div class="card-body p-4 p-md-5">
-                            <span class="badge text-bg-secondary mb-3 fs-6">Tecnologia</span>
+                            <span class="badge text-bg-light mb-3 fs-6">Tecnologia</span>
 
-                            <h2 class="display-6 fw-bold mb-4">
+                            <h2 id="heading-tecnologia" class="display-6 fw-bold mb-4">
                                 Uma pilha pequena, suficiente para fazer o projeto funcionar de verdade.
                             </h2>
 
                             <ul class="list-group list-group-flush">
-                                <li class="list-group-item bg-dark text-white d-flex justify-content-between px-0"><strong>ESP32</strong><span class="text-white">Hardware</span></li>
-                                <li class="list-group-item bg-dark text-white d-flex justify-content-between px-0"><strong>Sensor de nível</strong><span class="text-white">Medição</span></li>
-                                <li class="list-group-item bg-dark text-white d-flex justify-content-between px-0"><strong>FastAPI</strong><span class="text-white">Backend</span></li>
-                                <li class="list-group-item bg-dark text-white d-flex justify-content-between px-0"><strong>PostgreSQL/SqlServer</strong><span class="text-white">Banco local</span></li>
-                                <li class="list-group-item bg-dark text-white d-flex justify-content-between px-0"><strong>WebSocket</strong><span class="text-white">Tempo real</span></li>
-                                <li class="list-group-item bg-dark text-white d-flex justify-content-between px-0"><strong>Bootstrap</strong><span class="text-white">Interface</span></li>
+                                <li class="list-group-item bg-dark text-white d-flex justify-content-between px-0"><strong>ESP32</strong><span class="text-white-50">Hardware</span></li>
+                                <li class="list-group-item bg-dark text-white d-flex justify-content-between px-0"><strong>Sensor de nível</strong><span class="text-white-50">Medição</span></li>
+                                <li class="list-group-item bg-dark text-white d-flex justify-content-between px-0"><strong>FastAPI</strong><span class="text-white-50">Backend</span></li>
+                                <li class="list-group-item bg-dark text-white d-flex justify-content-between px-0"><strong>PostgreSQL/SqlServer</strong><span class="text-white-50">Banco local</span></li>
+                                <li class="list-group-item bg-dark text-white d-flex justify-content-between px-0"><strong>WebSocket</strong><span class="text-white-50">Tempo real</span></li>
+                                <li class="list-group-item bg-dark text-white d-flex justify-content-between px-0"><strong>Bootstrap</strong><span class="text-white-50">Interface</span></li>
                             </ul>
                         </div>
                     </div>
@@ -340,11 +362,11 @@
                 <div class="col-lg-7">
                     <div class="card h-100 border-0 shadow-sm">
                         <div class="card-body p-4 p-md-5">
-                            <span class="badge text-bg-secondary mb-3 fs-6">Arquitetura do sistema</span>
+                            <span class="badge text-bg-dark mb-3 fs-6">Arquitetura do sistema</span>
 
-                            <h2 class="display-6 fw-bold mb-3">
+                            <h3 class="display-6 fw-bold mb-3">
                                 Tudo acontece dentro da mesma rede.
-                            </h2>
+                            </h3>
 
                             <p class="text-dark opacity-75 fw-medium">
                                 O protótipo foi desenhado para reduzir dependências e facilitar a
@@ -352,15 +374,15 @@
                                 dados enviados pelo ESP32.
                             </p>
 
-                            <div class="vstack gap-3 mt-4">
-                                <div class="border rounded p-3 text-center fw-bold text-uppercase">Sensor</div>
-                                <div class="text-center fs-3"><i class="bi bi-arrow-down"></i></div>
-                                <div class="border rounded p-3 text-center fw-bold text-uppercase">ESP32</div>
-                                <div class="text-center fs-3"><i class="bi bi-arrow-down"></i></div>
-                                <div class="border rounded p-3 text-center fw-bold text-uppercase">API + PostgreSQL/SqlServer</div>
-                                <div class="text-center fs-3"><i class="bi bi-arrow-down"></i></div>
-                                <div class="border rounded p-3 text-center fw-bold text-uppercase">Dashboard + alerta</div>
-                            </div>
+                            <ol class="vstack gap-3 mt-4 list-unstyled p-0 m-0" aria-label="Fluxo da Arquitetura do Sistema">
+                                <li class="border rounded p-3 text-center fw-bold text-uppercase">1. Sensor</li>
+                                <li class="text-center fs-3" aria-hidden="true"><i class="bi bi-arrow-down"></i></li>
+                                <li class="border rounded p-3 text-center fw-bold text-uppercase">2. ESP32</li>
+                                <li class="text-center fs-3" aria-hidden="true"><i class="bi bi-arrow-down"></i></li>
+                                <li class="border rounded p-3 text-center fw-bold text-uppercase">3. API + PostgreSQL/SqlServer</li>
+                                <li class="text-center fs-3" aria-hidden="true"><i class="bi bi-arrow-down"></i></li>
+                                <li class="border rounded p-3 text-center fw-bold text-uppercase">4. Dashboard + Alerta</li>
+                            </ol>
                         </div>
                     </div>
                 </div>
@@ -368,12 +390,12 @@
         </div>
     </section>
 
-    <section id="projeto" class="bg-white py-5">
+    <section id="projeto" class="bg-white py-5" aria-labelledby="heading-niveis">
         <div class="container py-5">
             <div class="row align-items-start">
                 <div class="col-lg-5">
-                    <span class="badge text-bg-secondary mb-3 fs-6">Níveis de monitoramento</span>
-                    <h2 class="display-4 fw-bold lh-1 mb-4">
+                    <span class="badge text-bg-dark mb-3 fs-6">Níveis de monitoramento</span>
+                    <h2 id="heading-niveis" class="display-4 fw-bold lh-1 mb-4">
                         Informação fácil de entender.
                     </h2>
                     <p class="lead text-secondary fw-normal">
@@ -386,31 +408,32 @@
                 <div class="col-lg-6 ms-auto mt-5 mt-lg-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">
+                            <caption class="visually-hidden">Tabela demonstrativa dos níveis de água monitorados e suas respectivas situações de risco</caption>
                             <thead>
                                 <tr>
-                                    <th>Nível (cm)</th>
-                                    <th>Situação</th>
-                                    <th class="text-end">Ação</th>
+                                    <th scope="col">Nível (cm)</th>
+                                    <th scope="col">Situação</th>
+                                    <th scope="col" class="text-end">Ação</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td class="fw-bold">0-20</td>
+                                    <th scope="row" class="fw-bold">0-20</th>
                                     <td><strong>Normal</strong><div class="small text-secondary">Nível baixo</div></td>
                                     <td class="text-end"><span class="badge text-bg-success">Operação normal</span></td>
                                 </tr>
                                 <tr>
-                                    <td class="fw-bold">20-40</td>
+                                    <th scope="row" class="fw-bold">20-40</th>
                                     <td><strong>Atenção</strong><div class="small text-secondary">Elevação observada</div></td>
-                                    <td class="text-end"><span class="badge text-bg-warning">Acompanhar</span></td>
+                                    <td class="text-end"><span class="badge text-bg-warning text-dark">Acompanhar</span></td>
                                 </tr>
                                 <tr>
-                                    <td class="fw-bold">40-60</td>
+                                    <th scope="row" class="fw-bold">40-60</th>
                                     <td><strong>Alerta</strong><div class="small text-secondary">Nível elevado</div></td>
                                     <td class="text-end"><span class="badge text-bg-danger">Alerta ativo</span></td>
                                 </tr>
                                 <tr>
-                                    <td class="fw-bold">60+</td>
+                                    <th scope="row" class="fw-bold">60+</th>
                                     <td><strong>Crítico</strong><div class="small text-secondary">Situação de risco</div></td>
                                     <td class="text-end"><span class="badge text-bg-dark">Ação imediata</span></td>
                                 </tr>
@@ -422,12 +445,12 @@
         </div>
     </section>
 
-    <section id="equipe" class="py-5">
+    <section id="equipe" class="py-5" aria-labelledby="heading-equipe">
         <div class="container py-5">
             <div class="row mb-5">
                 <div class="col-lg-6">
-                    <span class="badge text-bg-secondary mb-3 fs-6">Equipe</span>
-                    <h2 class="display-4 fw-bold lh-1">
+                    <span class="badge text-bg-dark mb-3 fs-6">Equipe</span>
+                    <h2 id="heading-equipe" class="display-4 fw-bold lh-1">
                         Projeto desenvolvido em conjunto.
                     </h2>
                 </div>
@@ -441,45 +464,45 @@
 
             <div class="row g-4">
                 <div class="col-md-6 col-lg-3">
-                    <div class="card h-100 border-0 shadow-sm">
+                    <article class="card h-100 border-0 shadow-sm">
                         <div class="card-body">
-                            <div class="fw-bold">Guilherme H. De Castro Bobato</div>
-                            <div class="text-secondary small">Programador</div>
+                            <h3 class="h6 fw-bold mb-1">Guilherme H. De Castro Bobato</h3>
+                            <p class="text-secondary small mb-0">Programador</p>
                         </div>
-                    </div>
+                    </article>
                 </div>
 
                 <div class="col-md-6 col-lg-3">
-                    <div class="card h-100 border-0 shadow-sm">
+                    <article class="card h-100 border-0 shadow-sm">
                         <div class="card-body">
-                            <div class="fw-bold">Lucas Bernardes da Rocha</div>
-                            <div class="text-secondary small">Programador, Lider e PO</div>
+                            <h3 class="h6 fw-bold mb-1">Lucas Bernardes da Rocha</h3>
+                            <p class="text-secondary small mb-0">Programador, Líder e PO</p>
                         </div>
-                    </div>
+                    </article>
                 </div>
 
                 <div class="col-md-6 col-lg-3">
-                    <div class="card h-100 border-0 shadow-sm">
+                    <article class="card h-100 border-0 shadow-sm">
                         <div class="card-body">
-                            <div class="fw-bold">Luiz Augusto Okada Mioto da Silva</div>
-                            <div class="text-secondary small">Programador e PM</div>
+                            <h3 class="h6 fw-bold mb-1">Luiz Augusto Okada Mioto da Silva</h3>
+                            <p class="text-secondary small mb-0">Programador e PM</p>
                         </div>
-                    </div>
+                    </article>
                 </div>
 
                 <div class="col-md-6 col-lg-3">
-                    <div class="card h-100 border-0 shadow-sm">
+                    <article class="card h-100 border-0 shadow-sm">
                         <div class="card-body">
-                            <div class="fw-bold">Ruan Marcelo Ramacioti Luz</div>
-                            <div class="text-secondary small">Programador e TechLeader</div>
+                            <h3 class="h6 fw-bold mb-1">Ruan Marcelo Ramacioti Luz</h3>
+                            <p class="text-secondary small mb-0">Programador e TechLeader</p>
                         </div>
-                    </div>
+                    </article>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="bg-dark py-5">
+    <section class="bg-dark py-5" aria-label="Resumo do projeto">
         <div class="container py-5">
             <div class="row align-items-end">
                 <div class="col-lg-8">
@@ -499,8 +522,9 @@
                     <a href="https://github.com/Ruan-Marcelo/FloodView.git"
                        class="btn btn-light w-100"
                        target="_blank"
-                       rel="noopener noreferrer">
-                         Ver no GitHub <i class="bi bi-github me-1"></i> 
+                       rel="noopener noreferrer"
+                       aria-label="Ver repositório do projeto no GitHub (abre em uma nova aba)">
+                         Ver no GitHub <i class="bi bi-github ms-1" aria-hidden="true"></i> 
                     </a>
                 </div>
             </div>
@@ -508,12 +532,12 @@
     </section>
 </main>
 
-<footer class="bg-black text-white py-5 border-top ">
+<footer class="bg-black text-white py-5 border-top">
     <div class="container">
         <div class="row g-5">
             <div class="col-lg-5">
-                <a class="navbar-brand d-inline-flex align-items-center gap-2 text-white mb-3" href="#inicio">
-                    <span class="border border-light rounded-circle d-inline-flex align-items-center justify-content-center p-2 lh-1">
+                <a class="navbar-brand d-inline-flex align-items-center gap-2 text-white mb-3" href="#inicio" aria-label="FloodView - Voltar ao início">
+                    <span class="border border-light rounded-circle d-inline-flex align-items-center justify-content-center p-2 lh-1" aria-hidden="true">
                         <i class="bi bi-water"></i>
                     </span>
                     FloodView
@@ -526,13 +550,15 @@
             </div>
 
             <div class="col-6 col-lg-2 ms-lg-auto">
-                <div class="small text-uppercase fw-bold text-white-50 mb-3">Navegação</div>
-                <div class="d-flex flex-column gap-2">
-                    <a class="link-light link-underline-opacity-0 link-underline-opacity-100-hover" href="#problema">Problema</a>
-                    <a class="link-light link-underline-opacity-0 link-underline-opacity-100-hover" href="#funcionamento">Como funciona</a>
-                    <a class="link-light link-underline-opacity-0 link-underline-opacity-100-hover" href="#tecnologia">Tecnologia</a>
-                    <a class="link-light link-underline-opacity-0 link-underline-opacity-100-hover" href="#equipe">Equipe</a>
-                </div>
+                <div class="small text-uppercase fw-bold text-white-50 mb-3" id="footer-nav-label">Navegação</div>
+                <nav aria-labelledby="footer-nav-label">
+                    <div class="d-flex flex-column gap-2">
+                        <a class="link-light link-underline-opacity-0 link-underline-opacity-100-hover" href="#problema">Problema</a>
+                        <a class="link-light link-underline-opacity-0 link-underline-opacity-100-hover" href="#funcionamento">Como funciona</a>
+                        <a class="link-light link-underline-opacity-0 link-underline-opacity-100-hover" href="#tecnologia">Tecnologia</a>
+                        <a class="link-light link-underline-opacity-0 link-underline-opacity-100-hover" href="#equipe">Equipe</a>
+                    </div>
+                </nav>
             </div>
 
             <div class="col-6 col-lg-3">
@@ -540,10 +566,10 @@
                 <div class="d-flex flex-column gap-2 text-white">
                     <span>SENAI Ribeirão Preto - SP</span>
                     <span>(CE) Alexandre Figueira Rodrigues</span>
-                    <a class="link-light link-underline-opacity-0 link-underline-opacity-100-hover" href="https://github.com/Ruan-Marcelo/FloodView.git" target="_blank" rel="noopener noreferrer">
+                    <a class="link-light link-underline-opacity-0 link-underline-opacity-100-hover" href="https://github.com/Ruan-Marcelo/FloodView.git" target="_blank" rel="noopener noreferrer" aria-label="Repositório no GitHub (abre em nova aba)">
                         GitHub 
                     </a>
-                    <a class="link-light link-underline-opacity-0 link-underline-opacity-100-hover" href="https://ruan-marcelo.github.io/FloodView/" target="_blank" rel="noopener noreferrer">
+                    <a class="link-light link-underline-opacity-0 link-underline-opacity-100-hover" href="https://ruan-marcelo.github.io/FloodView/" target="_blank" rel="noopener noreferrer" aria-label="Site oficial do projeto (abre em nova aba)">
                         Site do projeto
                     </a>
                 </div>
