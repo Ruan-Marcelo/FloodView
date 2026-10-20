@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaflet - Marcadores com Raio (Círculo)</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- CSS do Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com" />
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            display: none;
+        }
+
+        h1:hover {
+
+            font-size: 1000px;
+            color: purple;
+        }
+
+        .painel-superior {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .bloco {
+            flex: 1;
+            padding: 10px;
+        }
+
+        .bloco h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 5px;
+        }
+
+        .cadastro-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .linha-form {
+            display: flex;
+            gap: 8px;
+        }
+
+        input {
+            padding: 8px;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 9px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .btn-cadastro {
+            background-color: #0056b3;
+        }
+
+        .btn-cadastro:hover {
+            background-color: #003d82;
+        }
+
+        #map {
+            height: 550px;
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .dica {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="painel-superior">
+        <!-- BLOCO 1: INFORMAÇÕES -->
+        <div class="bloco">
+            <h3>Raio de Cobertura</h3>
+            <div class="dica">
+                <p>🔵 Cada local cadastrado possui uma área circular de **1 km (1000m) de raio** ao seu redor.</p>
+                <p>🖱️ <b>Para cadastrar:</b> Clique no mapa para capturar as coordenadas e salve um novo ponto.</p>
+            </div>
+        </div>
+
+        <!-- BLOCO 2: CADASTRO -->
+        <div class="bloco">
+            <h3>Cadastrar Novo Lugar</h3>
+            <div class="cadastro-container">
+                <input type="text" id="cad-nome" placeholder="Nome do Local">
+                <input type="text" id="cad-detalhes" placeholder="Endereço/Descrição">
+                <div class="linha-form">
+                    <input type="number" id="cad-lat" step="any" placeholder="Latitude">
+                    <input type="number" id="cad-lon" step="any" placeholder="Longitude">
+                </div>
+                <button class="btn-cadastro" onclick="salvarNovoLugar()">Salvar e Desenhar</button>
+            </div>
+        </div>
+    </div>
+    <h1>BRENO GARCIA </h1>
+    <!-- Container do Mapa -->
+    <div id="map"></div>
+
+
+    <!-- JS do Leaflet -->
+    <script src="https://unpkg.com"></script>
+
+    <script>
+        // 1. Inicializa o mapa focado em Ribeirão Preto
+        const map = L.map('map').setView([-21.1704, -47.8103], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap local'
+        }).addTo(map);
+
+        // Grupo de camadas que conterá marcadores E os círculos
+        const grupoMarcadores = L.layerGroup().addTo(map);
+
+        // 2. BANCO DE DADOS PADRÃO (Caso o localStorage esteja limpo)
+        const DADOS_PADRAO = {
+            "teatro pedro ii": {
+                lat: -21.1776,
+                lon: -47.8099,
+                nome: "Teatro Pedro II",
+                detalhes: "Rua Álvares Cabral, 370 - Centro"
+            },
+            "novo shopping": {
+                lat: -21.2012,
+                lon: -47.7656,
+                nome: "Novo Shopping Ribeirão",
+                detalhes: "Av. Presidente Kennedy, 1500"
+            },
+            "parque raya": {
+                lat: -21.2064,
+                lon: -47.7904,
+                nome: "Parque Dr. Luis Carlos Raya",
+                detalhes: "R. Wladimir Meirelles Ferreira"
+            }
+        };
+
+        // 3. FUNÇÃO QUE CARREGA O BANCO DE DADOS
+        function obterBancoLocal() {
+            const bancoSalvo = localStorage.getItem('meu_banco_mapas');
+            if (!bancoSalvo) {
+                localStorage.setItem('meu_banco_mapas', JSON.stringify(DADOS_PADRAO));
+                return DADOS_PADRAO;
+            }
+            return JSON.parse(bancoSalvo);
+        }
+
+        // 4. FUNÇÃO CORE: Desenha os marcadores e os círculos ao redor deles
+        function renderizarTodosOsPontos() {
+            // Limpa o mapa para evitar rastros antigos
+            grupoMarcadores.clearLayers();
+
+            const bancoTotal = obterBancoLocal();
+            const listaCoordenadas = [];
+
+            for (let chave in bancoTotal) {
+                const local = bancoTotal[chave];
+
+                // A. Cria o marcador clássico (Pin)
+                const marcador = L.marker([local.lat, local.lon])
+                    .bindPopup(`<b>${local.nome}</b><br>${local.detalhes}`);
+
+                // B. ADICIONADO: Cria o círculo em volta da coordenada
+                const circulo = L.circle([local.lat, local.lon], {
+                    color: '#0056b3',      // Cor da borda do círculo
+                    fillColor: '#3388ff',  // Cor do preenchimento interno
+                    fillOpacity: 0.15,     // Transparência do fundo (0 = invisível, 1 = totalmente opaco)
+                    radius: 500           // Raio do perímetro em METROS (1000m = 1km)
+                }).bindPopup(`Área de cobertura de: ${local.nome}`);
+
+                // Adiciona ambos os elementos gráficos no grupo do mapa
+                grupoMarcadores.addLayer(marcador);
+                grupoMarcadores.addLayer(circulo);
+
+                listaCoordenadas.push([local.lat, local.lon]);
+            }
+
+            // Enquadra o mapa automaticamente para exibir todo mundo
+            if (listaCoordenadas.length > 0) {
+                map.fitBounds(listaCoordenadas, { padding: [50, 50] });
+            }
+        }
+
+        // 5. FUNÇÃO PARA ADICIONAR UM NOVO LUGAR
+        function salvarNovoLugar() {
+            const nome = document.getElementById('cad-nome').value.trim();
+            const detalhes = document.getElementById('cad-detalhes').value.trim();
+            const lat = parseFloat(document.getElementById('cad-lat').value);
+            const lon = parseFloat(document.getElementById('cad-lon').value);
+
+            if (!nome || !detalhes || isNaN(lat) || isNaN(lon)) {
+                alert('Por favor, preencha todos os campos corretamente!');
+                return;
+            }
+
+            const chaveBusca = nome.toLowerCase();
+            let bancoAtual = obterBancoLocal();
+
+            bancoAtual[chaveBusca] = {
+                lat: lat,
+                lon: lon,
+                nome: nome,
+                detalhes: detalhes
+            };
+
+            localStorage.setItem('meu_banco_mapas', JSON.stringify(bancoAtual));
+
+            // Limpa o formulário
+            document.getElementById('cad-nome').value = '';
+            document.getElementById('cad-detalhes').value = '';
+            document.getElementById('cad-lat').value = '';
+            document.getElementById('cad-lon').value = '';
+
+            renderizarTodosOsPontos();
+        }
+
+        // 6. Captura o clique no mapa para preencher o formulário
+        map.on('click', function (e) {
+            document.getElementById('cad-lat').value = e.latlng.lat.toFixed(6);
+            document.getElementById('cad-lon').value = e.latlng.lng.toFixed(6);
+        });
+
+        let marcadorPorClique = null;
+
+        const myIcon = L.icon({
+            iconUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a3/Google_Maps_icon_%282026%29.svg/3840px-Google_Maps_icon_%282026%29.svg.png?utm_source=pt.wikipedia.org&utm_campaign=index&utm_content=thumbnail',
+            iconSize: [30, 30],
+            iconAnchor: [17, 30],
+            popupAnchor: [-2, -40],
+        });
+
+        // Escuta o evento de clique no mapa
+        map.on('click', function (e) {
+            const lat = e.latlng.lat;
+            const lon = e.latlng.lng;
+
+            if (marcadorPorClique) {
+                map.removeLayer(marcadorPorClique);
+            }
+
+            // Cria o marcador com a cor corrigida
+            marcadorPorClique = L.marker([lat, lon], { icon: myIcon, interactive: false })
+                .addTo(map)
+                .bindPopup(`<b>Ponto clicado:</b><br>Lat: ${lat.toFixed(5)}<br>Lon: ${lon.toFixed(5)}`)
+                .openPopup();
+        });
+
+
+        // Roda o desenho completo ao iniciar
+        window.onload = () => {
+            renderizarTodosOsPontos();
+        };
+    </script>
+</body>
+
+</html>
