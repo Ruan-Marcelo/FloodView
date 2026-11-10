@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FloodView - Monitoramento de Alagamentos</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.9; }
+      50% { transform: scale(1.45); opacity: 0.35; }
+      100% { transform: scale(0.95); opacity: 0.9; }
+    }
+    .pulse-animation {
+      animation: pulse-ring 1.6s infinite ease-in-out;
+    }
+    .leaflet-popup-content-wrapper {
+      border-radius: 8px;
+      padding: 2px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
+
+  <!-- TOPBAR / NAVIGATION HEADER -->
+  <header class="border-b border-slate-200 bg-white sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col lg:flex-row justify-between items-center gap-3">
+      
+      <!-- Brand & Location -->
+      <div class="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-start">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-xl font-bold text-slate-900 tracking-tight leading-none">
+                Flood<span class="text-indigo-600">View</span>
+              </h1>
+              <span class="text-[10px] font-semibold px-1.5 py-0.5 bg-slate-100 text-slate-600 border border-slate-200 rounded uppercase">v2.4 IoT</span>
+            </div>
+            <p class="text-[11px] text-slate-500">Telemetria e Defesa Civil</p>
+          </div>
+        </div>
+
+        <!-- Mobile Clock -->
+        <div class="lg:hidden text-xs text-slate-500 font-mono" id="clock-display-mobile">00:00:00</div>
+      </div>
+
+      <!-- Navigation Tabs (Sem Scroll) -->
+      <nav class="flex flex-wrap items-center justify-center gap-1 bg-slate-100/80 p-1 rounded-lg border border-slate-200/60 text-xs font-medium w-full sm:w-auto">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn px-3 py-1.5 rounded-md text-slate-900 bg-white shadow-sm font-semibold transition-all">
+          Painel Principal
+        </button>
+        <button onclick="switchTab('charts')" id="nav-charts" class="nav-btn px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition-all">
+          Análises & Gráficos
+        </button>
+        <button onclick="openRegisterModal()" class="px-3 py-1.5 rounded-md text-slate-700 hover:bg-slate-200/70 transition-all flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Cadastrar Ponto
+        </button>
+        <button onclick="switchTab('contact')" id="nav-contact" class="nav-btn px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition-all">
+          Equipe Técnica
+        </button>
+      </nav>
+
+      <!-- Status Indicator & Clock -->
+      <div class="hidden lg:flex items-center gap-3 text-xs font-medium">
+        <div class="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200 text-slate-600">
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/>
+          </svg>
+          <span>Clique no mapa para marcar</span>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span class="text-slate-700">Ribeirão Preto / SP</span>
+          <span class="text-slate-300">|</span>
+          <span class="text-slate-500 font-mono" id="clock-display">00:00:00</span>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-5 space-y-5 flex-1 w-full">
+
+    <!-- ALERT BANNER -->
+    <div id="alert-banner" class="bg-slate-900 border-l-4 border-l-red-500 text-white p-3.5 rounded-lg shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+      <div class="flex items-center gap-3">
+        <div class="w-7 h-7 rounded bg-red-600/20 text-red-400 flex items-center justify-center shrink-0 border border-red-500/30">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+        </div>
+        <div>
+          <h4 class="font-bold text-slate-100">Alerta Meteorológico Ativo - Região Central</h4>
+          <p class="text-slate-300 mt-0.5">Elevação crítica no Córrego Retiro Saudoso. Av. Francisco Junqueira sob monitoramento intensivo.</p>
+        </div>
+      </div>
+      <button onclick="document.getElementById('alert-banner').remove()" class="text-slate-400 hover:text-white underline shrink-0">
+        Fechar
+      </button>
+    </div>
+
+    <!-- TAB 1: DASHBOARD MAIN VIEW -->
+    <section id="tab-dashboard" class="tab-content space-y-5">
+
+      <!-- KPI CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        
+        <!-- LEVEL 1: NORMAL -->
+        <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm border-l-4 border-l-emerald-500 flex justify-between items-start">
+          <div>
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-600">Nível 1 - Normal</span>
+            </div>
+            <p class="text-2xl font-bold text-slate-900" id="count-verde">0</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Capacidade segura (&lt; 30%)</p>
+          </div>
+        </div>
+
+        <!-- LEVEL 2: ATENÇÃO -->
+        <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm border-l-4 border-l-amber-500 flex justify-between items-start">
+          <div>
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-600">Nível 2 - Atenção</span>
+            </div>
+            <p class="text-2xl font-bold text-slate-900" id="count-amarelo">0</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Elevação moderada (30% - 70%)</p>
+          </div>
+        </div>
+
+        <!-- LEVEL 3: ALAGAMENTO -->
+        <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm border-l-4 border-l-red-500 flex justify-between items-start">
+          <div>
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="w-2 h-2 rounded-full bg-red-500"></span>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-600">Nível 3 - Alagamento</span>
+            </div>
+            <p class="text-2xl font-bold text-slate-900" id="count-vermelho">0</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Risco de transbordo (70% - 90%)</p>
+          </div>
+        </div>
+
+        <!-- LEVEL 4: CRÍTICO -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm text-white border-l-4 border-l-slate-400 flex justify-between items-start">
+          <div>
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-300">Nível 4 - Crítico</span>
+            </div>
+            <p class="text-2xl font-bold text-white" id="count-preto">0</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Interdição de via (&gt; 90%)</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MAP & SELECTED POINT PANEL -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        <!-- LEAFLET MAP CONTAINER -->
+        <div class="lg:col-span-2 bg-white border border-slate-200/80 rounded-xl p-3.5 flex flex-col h-[500px] shadow-sm">
+          <div class="flex justify-between items-center mb-2.5 px-1">
+            <div>
+              <h2 class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Telemetria em Tempo Real
+              </h2>
+            </div>
+            
+            <button onclick="openRegisterModal()" class="text-xs px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-md transition-all flex items-center gap-1 shrink-0">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Adicionar Ponto
+            </button>
+          </div>
+          
+          <div id="map" class="w-full flex-1 rounded-lg border border-slate-200 z-10 cursor-crosshair"></div>
+        </div>
+
+        <!-- SELECTED POINT DETAILS -->
+        <div class="bg-white border border-slate-200/80 rounded-xl p-4 flex flex-col justify-between shadow-sm">
+          <div>
+            <div class="flex justify-between items-start mb-3 border-b border-slate-100 pb-2.5 gap-2">
+              <div>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sensor Selecionado</span>
+                <h3 class="text-base font-bold text-slate-900 leading-snug" id="selected-name">Av. Francisco Junqueira x Av. Maurílio Biagi</h3>
+                <p class="text-xs text-slate-500" id="selected-address">Córrego Retiro Saudoso - Centro</p>
+              </div>
+              <span id="selected-status-badge" class="px-2 py-0.5 bg-slate-900 text-white text-[10px] font-bold rounded tracking-wider uppercase shrink-0">CRÍTICO</span>
+            </div>
+
+            <!-- WATER LEVEL METRICS -->
+            <div class="space-y-3 mb-4">
+              <div>
+                <div class="flex justify-between text-xs font-semibold mb-1">
+                  <span class="text-slate-600">Capacidade do Canal</span>
+                  <span class="text-slate-900 font-bold" id="selected-level-text">95% (3.40m)</span>
+                </div>
+                <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
+                  <div id="selected-progress-bar" class="h-full bg-slate-900 rounded-full transition-all duration-500" style="width: 95%"></div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-200/60">
+                <div>
+                  <span class="text-slate-500 block text-[11px]">Vazão Estimada</span>
+                  <strong class="text-slate-800 font-bold" id="selected-flow">48.2 m³/s</strong>
+                </div>
+                <div>
+                  <span class="text-slate-500 block text-[11px]">Última Leitura</span>
+                  <strong class="text-slate-800 font-bold" id="selected-updated">Agora mesmo</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- MINI CHART -->
+            <div class="mb-2">
+              <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Histórico (Últimas 6h)</h4>
+              <div class="h-28">
+                <canvas id="dashMiniChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-2 space-y-2">
+            <button onclick="triggerDefenseAlert()" class="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center gap-1.5 text-xs">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+              </svg>
+              Notificar Defesa Civil
+            </button>
+
+            <button onclick="deleteSelectedSensor()" class="w-full py-1.5 bg-white hover:bg-slate-50 text-slate-600 hover:text-red-600 border border-slate-200 font-medium rounded-lg transition-all flex items-center justify-center gap-1 text-xs">
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+              Excluir Ponto
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- TAB 2: ANALYTICS & CHARTS GALLERY -->
+    <section id="tab-charts" class="tab-content hidden space-y-5">
+      <div class="border-b border-slate-200 pb-3">
+        <h2 class="text-lg font-bold text-slate-900 tracking-tight">Análises de Telemetria</h2>
+        <p class="text-xs text-slate-500">Dados consolidados de nível e precipitação na bacia hidrográfica.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Histórico Temporal (m)</h3>
+            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Linha</span>
+          </div>
+          <div class="h-56">
+            <canvas id="chartLineTrend"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Precipitação Acumulada (mm/24h)</h3>
+            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Barras</span>
+          </div>
+          <div class="h-56">
+            <canvas id="chartBarRainfall"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Distribuição por Alerta</h3>
+            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Rosca</span>
+          </div>
+          <div class="h-56 flex items-center justify-center">
+            <canvas id="chartDonutStatus"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Vazão Comparativa (m³/s)</h3>
+            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Área</span>
+          </div>
+          <div class="h-56">
+            <canvas id="chartAreaFlow"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: CONTACT & SOFTWARE TEAM -->
+    <section id="tab-contact" class="tab-content hidden space-y-5">
+      <div class="border-b border-slate-200 pb-3">
+        <h2 class="text-lg font-bold text-slate-900 tracking-tight">Equipe de Desenvolvimento</h2>
+        <p class="text-xs text-slate-500">Contatos técnicos e suporte à infraestrutura da plataforma.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="space-y-3">
+          <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Responsáveis Técnicos</h3>
+
+          <div class="bg-white border border-slate-200/80 rounded-lg p-3 shadow-sm flex items-center gap-3">
+            <div class="w-8 h-8 rounded-md bg-slate-900 text-white font-bold text-xs flex items-center justify-center shrink-0">RU</div>
+            <div>
+              <h4 class="font-bold text-xs text-slate-900">Ruan</h4>
+              <p class="text-[11px] text-slate-500">Arquitetura de Software</p>
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200/80 rounded-lg p-3 shadow-sm flex items-center gap-3">
+            <div class="w-8 h-8 rounded-md bg-slate-800 text-white font-bold text-xs flex items-center justify-center shrink-0">LU</div>
+            <div>
+              <h4 class="font-bold text-xs text-slate-900">Lucas</h4>
+              <p class="text-[11px] text-slate-500">Desenvolvimento IoT</p>
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200/80 rounded-lg p-3 shadow-sm flex items-center gap-3">
+            <div class="w-8 h-8 rounded-md bg-slate-700 text-white font-bold text-xs flex items-center justify-center shrink-0">LZ</div>
+            <div>
+              <h4 class="font-bold text-xs text-slate-900">Luiz</h4>
+              <p class="text-[11px] text-slate-500">Engenharia Frontend</p>
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200/80 rounded-lg p-3 shadow-sm flex items-center gap-3">
+            <div class="w-8 h-8 rounded-md bg-slate-600 text-white font-bold text-xs flex items-center justify-center shrink-0">GU</div>
+            <div>
+              <h4 class="font-bold text-xs text-slate-900">Guilherme</h4>
+              <p class="text-[11px] text-slate-500">Infraestrutura & Dados</p>
+            </div>
+          </div>
+
+          <div class="bg-slate-200/60 border border-slate-300/60 rounded-lg p-3 text-xs space-y-1">
+            <div class="font-semibold text-slate-800">Central de Operações</div>
+            <p class="text-slate-600 text-[11px]">Linha direta para suporte emergencial da Defesa Civil.</p>
+            <div class="font-mono text-slate-900 font-bold">0800-770-FLOOD</div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-2 bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm">
+          <h3 class="text-sm font-bold text-slate-900 mb-1">Abertura de Chamado Técnico</h3>
+          <p class="text-xs text-slate-500 mb-4">Envie solicitações de manutenção ou relatório de anomalias.</p>
+
+          <form id="contactForm" onsubmit="handleContactSubmit(event)" class="space-y-3.5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Nome Completo</label>
+                <input type="text" required placeholder="Ex: Carlos Eduardo" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"/>
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">E-mail Corporativo</label>
+                <input type="email" required placeholder="carlos@defesacivil.sp.gov.br" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"/>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Órgão / Departamento</label>
+                <input type="text" required placeholder="Ex: Defesa Civil SP" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"/>
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Tipo de Ocorrência</label>
+                <select required class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all text-slate-800">
+                  <option value="support">Suporte Operacional</option>
+                  <option value="new_sensor">Solicitação de Novo Sensor</option>
+                  <option value="calibration">Calibração de Equipamento</option>
+                  <option value="bug">Reportar Falha de Sistema</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Descrição</label>
+              <textarea required rows="3" placeholder="Descreva os detalhes da ocorrência..." class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"></textarea>
+            </div>
+
+            <button type="submit" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg text-xs transition-all shadow-sm">
+              Enviar Chamado
+            </button>
+          </form>
+
+          <div id="contactSuccessMsg" class="hidden mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs font-medium">
+            Mensagem registrada com sucesso. A equipe técnica responderá em breve.
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: REGISTER NEW SENSOR POINT -->
+  <div id="registerModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-xl max-w-md w-full p-5 shadow-lg relative">
+      
+      <div class="flex justify-between items-center pb-2.5 border-b border-slate-100 mb-3.5">
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Cadastrar Ponto de Telemetria</h3>
+          <p class="text-[11px] text-slate-500">Adicionar novo dispositivo IoT na rede de Ribeirão Preto</p>
+        </div>
+        <button onclick="closeRegisterModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-md">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <form id="sensorForm" onsubmit="handleSensorRegister(event)" class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Identificação / Local</label>
+          <input type="text" id="sensor-name" required placeholder="Ex: Av. Caramuru - Ponte 03" class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"/>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Referência / Bairro</label>
+          <input type="text" id="sensor-address" required placeholder="Ex: Córrego Luzitana - Alto da Boa Vista" class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"/>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Latitude</label>
+            <input type="number" step="any" id="sensor-lat" required value="-21.1850" class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg font-mono focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Longitude</label>
+            <input type="number" step="any" id="sensor-lng" required value="-47.8180" class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg font-mono focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"/>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Cota Máxima (m)</label>
+            <input type="number" step="0.1" id="sensor-max" required value="3.5" class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Status Inicial</label>
+            <select id="sensor-status" required class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900">
+              <option value="verde">Nível 1 - Normal (Verde)</option>
+              <option value="amarelo">Nível 2 - Atenção (Amarelo)</option>
+              <option value="vermelho">Nível 3 - Alagamento (Vermelho)</option>
+              <option value="preto">Nível 4 - Crítico (Preto)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" onclick="closeRegisterModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-xs transition-all">
+            Cancelar
+          </button>
+          <button type="submit" class="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-lg text-xs transition-all shadow-sm">
+            Salvar Registro
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-4 right-4 bg-slate-900 text-white text-xs px-3.5 py-2.5 rounded-lg shadow-md z-50 hidden flex items-center gap-2 border border-slate-800">
+    <span id="toast-text">Notificação enviada</span>
+  </div>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    function updateClock() {
+      const timeStr = new Date().toLocaleTimeString('pt-BR');
+      const desktopClock = document.getElementById('clock-display');
+      const mobileClock = document.getElementById('clock-display-mobile');
+      if (desktopClock) desktopClock.innerText = timeStr;
+      if (mobileClock) mobileClock.innerText = timeStr;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('bg-white', 'text-slate-900', 'shadow-sm', 'font-semibold');
+        btn.classList.add('text-slate-600');
+      });
+
+      document.getElementById('tab-' + tabId).classList.remove('hidden');
+      const activeNav = document.getElementById('nav-' + tabId);
+      if (activeNav) {
+        activeNav.classList.add('bg-white', 'text-slate-900', 'shadow-sm', 'font-semibold');
+        activeNav.classList.remove('text-slate-600');
+      }
+
+      if (tabId === 'dashboard' && map) {
+        setTimeout(() => map.invalidateSize(), 150);
+      }
+      if (tabId === 'charts') {
+        setTimeout(initGalleryCharts, 100);
+      }
+    }
+
+    let sensorsData = [
+      {
+        id: 1,
+        name: 'Av. Francisco Junqueira x Av. Maurílio Biagi',
+        address: 'Córrego Retiro Saudoso - Centro',
+        lat: -21.1785,
+        lng: -47.8053,
+        status: 'preto',
+        levelPct: 95,
+        levelMeters: '3.40m',
+        flow: '48.2 m³/s',
+        updated: 'Agora mesmo'
+      },
+      {
+        id: 2,
+        name: 'Av. Caramuru (Ponte Córrego Luzitana)',
+        address: 'Alto da Boa Vista',
+        lat: -21.1905,
+        lng: -47.8153,
+        status: 'vermelho',
+        levelPct: 82,
+        levelMeters: '2.85m',
+        flow: '35.1 m³/s',
+        updated: 'Há 2 min'
+      },
+      {
+        id: 3,
+        name: 'Av. Via Norte x Rua São Francisco',
+        address: 'Córrego Tanquinho - Ipiranga',
+        lat: -21.1555,
+        lng: -47.8013,
+        status: 'vermelho',
+        levelPct: 76,
+        levelMeters: '2.40m',
+        flow: '29.8 m³/s',
+        updated: 'Há 5 min'
+      },
+      {
+        id: 4,
+        name: 'Av. Jerônimo Gonçalves (Terminal Rodoviário)',
+        address: 'Baixada Centro',
+        lat: -21.1745,
+        lng: -47.8133,
+        status: 'amarelo',
+        levelPct: 58,
+        levelMeters: '1.90m',
+        flow: '18.4 m³/s',
+        updated: 'Há 8 min'
+      },
+      {
+        id: 5,
+        name: 'Av. Professor João Fiúsa',
+        address: 'Zona Sul - Jardim Irajá',
+        lat: -21.2055,
+        lng: -47.8303,
+        status: 'verde',
+        levelPct: 15,
+        levelMeters: '0.45m',
+        flow: '4.2 m³/s',
+        updated: 'Há 12 min'
+      }
+    ];
+
+    let currentSelectedSensorId = 1;
+    let map;
+    const markersMap = new Map();
+
+    function updateKPICounts() {
+      const counts = { verde: 0, amarelo: 0, vermelho: 0, preto: 0 };
+      sensorsData.forEach(s => {
+        if (counts[s.status] !== undefined) counts[s.status]++;
+      });
+
+      document.getElementById('count-verde').innerText = counts.verde;
+      document.getElementById('count-amarelo').innerText = counts.amarelo;
+      document.getElementById('count-vermelho').innerText = counts.vermelho;
+      document.getElementById('count-preto').innerText = counts.preto;
+    }
+
+    function initMap() {
+      map = L.map('map').setView([-21.1775, -47.8103], 13);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      map.on('click', function(e) {
+        const lat = e.latlng.lat.toFixed(6);
+        const lng = e.latlng.lng.toFixed(6);
+        
+        document.getElementById('sensor-lat').value = lat;
+        document.getElementById('sensor-lng').value = lng;
+        document.getElementById('sensor-name').value = `Ponto RP (${lat.slice(0, 7)}, ${lng.slice(0, 7)})`;
+        document.getElementById('sensor-address').value = 'Ribeirão Preto - Marcado via Mapa';
+        
+        openRegisterModal();
+        showToast(`Coordenadas salvas: ${lat}, ${lng}`);
+      });
+
+      sensorsData.forEach(sensor => addSensorMarker(sensor));
+      updateKPICounts();
+    }
+
+    function createCustomPinIcon(status) {
+      let bgClass = 'bg-emerald-500';
+      let borderClass = 'border-white';
+      let pulse = false;
+
+      if (status === 'amarelo') bgClass = 'bg-amber-500';
+      if (status === 'vermelho') { bgClass = 'bg-red-500'; pulse = true; }
+      if (status === 'preto') { bgClass = 'bg-slate-900'; pulse = true; }
+
+      const pulseHtml = pulse 
+        ? `<div class="absolute w-6 h-6 ${bgClass} opacity-30 rounded-full pulse-animation"></div>` 
+        : '';
+
+      return L.divIcon({
+        className: 'custom-pin',
+        html: `<div class="relative flex items-center justify-center">
+                 ${pulseHtml}
+                 <div class="w-3.5 h-3.5 ${bgClass} border-2 ${borderClass} rounded-full shadow-sm"></div>
+               </div>`,
+        iconSize: [24, 24]
+      });
+    }
+
+    function addSensorMarker(sensor) {
+      const icon = createCustomPinIcon(sensor.status);
+      const marker = L.marker([sensor.lat, sensor.lng], { icon: icon }).addTo(map);
+      
+      const popupHtml = `
+        <div class="text-xs p-1.5 space-y-1">
+          <strong class="text-slate-900 font-bold block">${sensor.name}</strong>
+          <span class="text-slate-500 block text-[11px]">${sensor.address}</span>
+          <span class="font-semibold text-slate-800 block text-[11px]">Nível: ${sensor.levelPct}% (${sensor.levelMeters})</span>
+          <button onclick="deleteSensorById(${sensor.id})" class="mt-1 w-full py-1 bg-red-600 hover:bg-red-700 text-white font-medium rounded text-[10px] transition-all">
+            Excluir Ponto
+          </button>
+        </div>
+      `;
+
+      marker.bindPopup(popupHtml);
+
+      marker.on('click', () => {
+        updateSelectedPoint(sensor);
+      });
+
+      markersMap.set(sensor.id, marker);
+    }
+
+    function updateSelectedPoint(sensor) {
+      if (!sensor) return;
+
+      currentSelectedSensorId = sensor.id;
+      document.getElementById('selected-name').innerText = sensor.name;
+      document.getElementById('selected-address').innerText = sensor.address;
+      document.getElementById('selected-level-text').innerText = `${sensor.levelPct}% (${sensor.levelMeters})`;
+      document.getElementById('selected-flow').innerText = sensor.flow;
+      document.getElementById('selected-updated').innerText = sensor.updated;
+
+      const bar = document.getElementById('selected-progress-bar');
+      bar.style.width = sensor.levelPct + '%';
+
+      const badge = document.getElementById('selected-status-badge');
+      
+      if (sensor.status === 'verde') {
+        badge.className = "px-2 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded tracking-wider uppercase shrink-0";
+        badge.innerText = "NORMAL";
+        bar.className = "h-full bg-emerald-500 rounded-full transition-all duration-500";
+      } else if (sensor.status === 'amarelo') {
+        badge.className = "px-2 py-0.5 bg-amber-500 text-white text-[10px] font-bold rounded tracking-wider uppercase shrink-0";
+        badge.innerText = "ATENÇÃO";
+        bar.className = "h-full bg-amber-500 rounded-full transition-all duration-500";
+      } else if (sensor.status === 'vermelho') {
+        badge.className = "px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded tracking-wider uppercase shrink-0";
+        badge.innerText = "ALAGAMENTO";
+        bar.className = "h-full bg-red-600 rounded-full transition-all duration-500";
+      } else {
+        badge.className = "px-2 py-0.5 bg-slate-900 text-white text-[10px] font-bold rounded tracking-wider uppercase shrink-0";
+        badge.innerText = "CRÍTICO";
+        bar.className = "h-full bg-slate-900 rounded-full transition-all duration-500";
+      }
+
+      updateDashMiniChart(sensor.levelPct);
+    }
+
+    function deleteSensorById(id) {
+      if (sensorsData.length <= 1) {
+        showToast('Operação não permitida. É necessário manter ao menos um ponto ativo.');
+        return;
+      }
+
+      const sensorToDelete = sensorsData.find(s => s.id === id);
+      if (!sensorToDelete) return;
+
+      if (confirm(`Confirmar a exclusão do ponto "${sensorToDelete.name}"?`)) {
+        const marker = markersMap.get(id);
+        if (marker) {
+          map.removeLayer(marker);
+          markersMap.delete(id);
+        }
+
+        sensorsData = sensorsData.filter(s => s.id !== id);
+        updateKPICounts();
+
+        if (sensorsData.length > 0) {
+          updateSelectedPoint(sensorsData[0]);
+        }
+        showToast(`Ponto "${sensorToDelete.name}" excluído.`);
+      }
+    }
+
+    function deleteSelectedSensor() {
+      deleteSensorById(currentSelectedSensorId);
+    }
+
+    let dashMiniChartInstance = null;
+    function initDashMiniChart() {
+      const ctx = document.getElementById('dashMiniChart').getContext('2d');
+      dashMiniChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['13h', '14h', '15h', '16h', '17h', '18h'],
+          datasets: [{
+            data: [40, 52, 65, 80, 90, 95],
+            borderColor: '#0f172a',
+            backgroundColor: 'rgba(15, 23, 42, 0.03)',
+            fill: true,
+            tension: 0.3,
+            borderWidth: 2,
+            pointRadius: 2.5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 9 } } },
+            y: { grid: { color: '#f1f5f9' }, ticks: { color: '#94a3b8', font: { size: 9 } } }
+          }
+        }
+      });
+    }
+
+    function updateDashMiniChart(currentVal) {
+      if (!dashMiniChartInstance) return;
+      const base = Math.max(10, currentVal - 40);
+      dashMiniChartInstance.data.datasets[0].data = [
+        Math.round(base * 0.4),
+        Math.round(base * 0.6),
+        Math.round(base * 0.8),
+        Math.round(currentVal * 0.85),
+        Math.round(currentVal * 0.95),
+        currentVal
+      ];
+      dashMiniChartInstance.update();
+    }
+
+    function openRegisterModal() {
+      document.getElementById('registerModal').classList.remove('hidden');
+    }
+
+    function closeRegisterModal() {
+      document.getElementById('registerModal').classList.add('hidden');
+    }
+
+    function handleSensorRegister(e) {
+      e.preventDefault();
+      
+      const name = document.getElementById('sensor-name').value;
+      const address = document.getElementById('sensor-address').value;
+      const lat = parseFloat(document.getElementById('sensor-lat').value);
+      const lng = parseFloat(document.getElementById('sensor-lng').value);
+      const status = document.getElementById('sensor-status').value;
+      const maxLevel = parseFloat(document.getElementById('sensor-max').value);
+
+      let pct = 20;
+      if (status === 'amarelo') pct = 55;
+      if (status === 'vermelho') pct = 82;
+      if (status === 'preto') pct = 96;
+
+      const newSensor = {
+        id: Date.now(),
+        name: name,
+        address: address,
+        lat: lat,
+        lng: lng,
+        status: status,
+        levelPct: pct,
+        levelMeters: `${(maxLevel * (pct / 100)).toFixed(2)}m`,
+        flow: '22.0 m³/s',
+        updated: 'Agora mesmo'
+      };
+
+      sensorsData.push(newSensor);
+      addSensorMarker(newSensor);
+      updateKPICounts();
+
+      map.setView([lat, lng], 14);
+      updateSelectedPoint(newSensor);
+      closeRegisterModal();
+      showToast('Ponto registrado com sucesso.');
+      document.getElementById('sensorForm').reset();
+    }
+
+    function handleContactSubmit(e) {
+      e.preventDefault();
+      document.getElementById('contactSuccessMsg').classList.remove('hidden');
+      document.getElementById('contactForm').reset();
+      setTimeout(() => {
+        document.getElementById('contactSuccessMsg').classList.add('hidden');
+      }, 4000);
+    }
+
+    function triggerDefenseAlert() {
+      showToast('Alerta emitido à Central da Defesa Civil.');
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-text').innerText = text;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    let galleryChartsInitialized = false;
+
+    function initGalleryCharts() {
+      if (galleryChartsInitialized) return;
+      galleryChartsInitialized = true;
+
+      new Chart(document.getElementById('chartLineTrend').getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
+          datasets: [
+            {
+              label: 'Córrego Retiro Saudoso',
+              data: [0.8, 1.0, 1.4, 2.2, 2.9, 3.2, 3.4],
+              borderColor: '#0f172a',
+              borderWidth: 2
+            },
+            {
+              label: 'Córrego Luzitana',
+              data: [0.5, 0.7, 1.1, 1.8, 2.3, 2.7, 2.85],
+              borderColor: '#ef4444',
+              borderWidth: 2
+            },
+            {
+              label: 'Córrego Tanquinho',
+              data: [0.4, 0.6, 0.9, 1.4, 1.9, 2.2, 2.4],
+              borderColor: '#f59e0b',
+              borderWidth: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } },
+          scales: {
+            x: { grid: { display: false } },
+            y: { grid: { color: '#f1f5f9' } }
+          }
+        }
+      });
+
+      new Chart(document.getElementById('chartBarRainfall').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: ['Centro', 'Ipiranga', 'Alto Boa Vista', 'Campos Elíseos', 'Fiúsa', 'Vila Tibério'],
+          datasets: [{
+            label: 'Precipitação (mm)',
+            data: [84, 72, 65, 58, 24, 69],
+            backgroundColor: ['#0f172a', '#ef4444', '#ef4444', '#f59e0b', '#10b981', '#f59e0b'],
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false } },
+            y: { grid: { color: '#f1f5f9' } }
+          }
+        }
+      });
+
+      new Chart(document.getElementById('chartDonutStatus').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: ['Normal (Verde)', 'Atenção (Amarelo)', 'Alagamento (Vermelho)', 'Crítico (Preto)'],
+          datasets: [{
+            data: [1, 1, 2, 1],
+            backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#0f172a'],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } },
+          cutout: '70%'
+        }
+      });
+
+      new Chart(document.getElementById('chartAreaFlow').getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: ['12h', '13h', '14h', '15h', '16h', '17h', '18h'],
+          datasets: [
+            {
+              label: 'Retiro Saudoso (m³/s)',
+              data: [12, 18, 25, 34, 42, 46, 48.2],
+              borderColor: '#1d4ed8',
+              backgroundColor: 'rgba(29, 78, 216, 0.08)',
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: 'Córrego Luzitana (m³/s)',
+              data: [8, 12, 19, 24, 30, 33, 35.1],
+              borderColor: '#64748b',
+              backgroundColor: 'rgba(100, 116, 139, 0.04)',
+              fill: true,
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } },
+          scales: {
+            x: { grid: { display: false } },
+            y: { grid: { color: '#f1f5f9' } }
+          }
+        }
+      });
+    }
+
+    window.onload = function() {
+      initMap();
+      initDashMiniChart();
+      updateSelectedPoint(sensorsData[0]);
+    };
+  </script>
+</body>
+</html>
