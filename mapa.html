@@ -139,49 +139,39 @@
     <script src="https://unpkg.com"></script>
 
     <script>
-        // 1. Inicializa o mapa focado em Ribeirão Preto
-        const map = L.map('map').setView([-21.1704, -47.8103], 13);
+
+        // 1. Define os limites geográficos
+        const bounds = L.latLngBounds(
+            [2.58425, -60.98545], // Sudoeste
+            [2.99828, -60.40583]  // Nordeste
+        );
+
+
+        const map = L.map('map', {
+            center: [2.82027, -60.67197],
+            zoom: 13,
+            maxBounds: bounds,
+            maxBoundsViscosity: 1.0,
+            minZoom: 12,
+            maxZoom: 18
+        });
+
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap local'
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 18
         }).addTo(map);
+
 
         // Grupo de camadas que conterá marcadores E os círculos
         const grupoMarcadores = L.layerGroup().addTo(map);
 
+
+
         // 2. BANCO DE DADOS PADRÃO (Caso o localStorage esteja limpo)
-        const DADOS_PADRAO = {
-            "teatro pedro ii": {
-                lat: -21.1776,
-                lon: -47.8099,
-                nome: "Teatro Pedro II",
-                detalhes: "Rua Álvares Cabral, 370 - Centro"
-            },
-            "novo shopping": {
-                lat: -21.2012,
-                lon: -47.7656,
-                nome: "Novo Shopping Ribeirão",
-                detalhes: "Av. Presidente Kennedy, 1500"
-            },
-            "parque raya": {
-                lat: -21.2064,
-                lon: -47.7904,
-                nome: "Parque Dr. Luis Carlos Raya",
-                detalhes: "R. Wladimir Meirelles Ferreira"
-            }
-        };
 
-        // 3. FUNÇÃO QUE CARREGA O BANCO DE DADOS
-        function obterBancoLocal() {
-            const bancoSalvo = localStorage.getItem('meu_banco_mapas');
-            if (!bancoSalvo) {
-                localStorage.setItem('meu_banco_mapas', JSON.stringify(DADOS_PADRAO));
-                return DADOS_PADRAO;
-            }
-            return JSON.parse(bancoSalvo);
-        }
 
-        // 4. FUNÇÃO CORE: Desenha os marcadores e os círculos ao redor deles
+        // 3. FUNÇÃO CORE: Desenha os marcadores e os círculos ao redor deles
         function renderizarTodosOsPontos() {
             // Limpa o mapa para evitar rastros antigos
             grupoMarcadores.clearLayers();
@@ -217,7 +207,7 @@
             }
         }
 
-        // 5. FUNÇÃO PARA ADICIONAR UM NOVO LUGAR
+        // 4. FUNÇÃO PARA ADICIONAR UM NOVO LUGAR
         function salvarNovoLugar() {
             const nome = document.getElementById('cad-nome').value.trim();
             const detalhes = document.getElementById('cad-detalhes').value.trim();
@@ -250,7 +240,7 @@
             renderizarTodosOsPontos();
         }
 
-        // 6. Captura o clique no mapa para preencher o formulário
+        // 5. Captura o clique no mapa para preencher o formulário
         map.on('click', function (e) {
             document.getElementById('cad-lat').value = e.latlng.lat.toFixed(6);
             document.getElementById('cad-lon').value = e.latlng.lng.toFixed(6);
