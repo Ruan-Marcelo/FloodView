@@ -1,48 +1,33 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FloodView - Monitoramento de Alagamentos</title>
-
+  
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-
+  
   <!-- Leaflet CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- Plugin Zoom LeaFlet-->
+  
+  <!-- Leaflet Fullscreen Plugin -->
   <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js'></script>
-  <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css'
-    rel='stylesheet' />
+  <link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css' rel='stylesheet' />
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+  
   <style>
     @keyframes pulse-ring {
-      0% {
-        transform: scale(0.95);
-        opacity: 0.9;
-      }
-
-      50% {
-        transform: scale(1.45);
-        opacity: 0.35;
-      }
-
-      100% {
-        transform: scale(0.95);
-        opacity: 0.9;
-      }
+      0% { transform: scale(0.95); opacity: 0.9; }
+      50% { transform: scale(1.45); opacity: 0.35; }
+      100% { transform: scale(0.95); opacity: 0.9; }
     }
-
     .pulse-animation {
       animation: pulse-ring 1.6s infinite ease-in-out;
     }
-
     .leaflet-popup-content-wrapper {
       border-radius: 8px;
       padding: 2px;
@@ -50,20 +35,18 @@
     }
   </style>
 </head>
-
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
   <!-- TOPBAR / NAVIGATION HEADER -->
   <header class="border-b border-slate-200 bg-white sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col lg:flex-row justify-between items-center gap-3">
-
+      
       <!-- Brand & Location -->
       <div class="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-start">
         <div class="flex items-center gap-2.5">
-          <div
-            class="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+          <div class="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white font-bold text-lg shadow-sm">
             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
             </svg>
           </div>
           <div>
@@ -71,9 +54,7 @@
               <h1 class="text-xl font-bold text-slate-900 tracking-tight leading-none">
                 Flood<span class="text-indigo-600">View</span>
               </h1>
-              <span
-                class="text-[10px] font-semibold px-1.5 py-0.5 bg-slate-100 text-slate-600 border border-slate-200 rounded uppercase">v2.4
-                IoT</span>
+              <span class="text-[10px] font-semibold px-1.5 py-0.5 bg-slate-100 text-slate-600 border border-slate-200 rounded uppercase">v2.4 IoT</span>
             </div>
             <p class="text-[11px] text-slate-500">Telemetria e Defesa Civil</p>
           </div>
@@ -84,25 +65,20 @@
       </div>
 
       <!-- Navigation Tabs (Sem Scroll) -->
-      <nav
-        class="flex flex-wrap items-center justify-center gap-1 bg-slate-100/80 p-1 rounded-lg border border-slate-200/60 text-xs font-medium w-full sm:w-auto">
-        <button onclick="switchTab('dashboard')" id="nav-dashboard"
-          class="nav-btn px-3 py-1.5 rounded-md text-slate-900 bg-white shadow-sm font-semibold transition-all">
+      <nav class="flex flex-wrap items-center justify-center gap-1 bg-slate-100/80 p-1 rounded-lg border border-slate-200/60 text-xs font-medium w-full sm:w-auto">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn px-3 py-1.5 rounded-md text-slate-900 bg-white shadow-sm font-semibold transition-all">
           Painel Principal
         </button>
-        <button onclick="switchTab('charts')" id="nav-charts"
-          class="nav-btn px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition-all">
+        <button onclick="switchTab('charts')" id="nav-charts" class="nav-btn px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition-all">
           Análises & Gráficos
         </button>
-        <button onclick="openRegisterModal()"
-          class="px-3 py-1.5 rounded-md text-slate-700 hover:bg-slate-200/70 transition-all flex items-center gap-1.5">
+        <button onclick="openRegisterModal()" class="px-3 py-1.5 rounded-md text-slate-700 hover:bg-slate-200/70 transition-all flex items-center gap-1.5">
           <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
           </svg>
           Cadastrar Ponto
         </button>
-        <button onclick="switchTab('contact')" id="nav-contact"
-          class="nav-btn px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition-all">
+        <button onclick="switchTab('contact')" id="nav-contact" class="nav-btn px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition-all">
           Equipe Técnica
         </button>
       </nav>
@@ -111,14 +87,13 @@
       <div class="hidden lg:flex items-center gap-3 text-xs font-medium">
         <div class="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200 text-slate-600">
           <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/>
           </svg>
           <span>Clique no mapa para marcar</span>
         </div>
         <div class="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200">
           <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span class="text-slate-700">Ribeirão Preto / SP</span>
+          <span class="text-slate-700">Boa Vista / RR</span>
           <span class="text-slate-300">|</span>
           <span class="text-slate-500 font-mono" id="clock-display">00:00:00</span>
         </div>
@@ -131,24 +106,19 @@
   <main class="max-w-7xl mx-auto px-4 sm:px-6 py-5 space-y-5 flex-1 w-full">
 
     <!-- ALERT BANNER -->
-    <div id="alert-banner"
-      class="bg-slate-900 border-l-4 border-l-red-500 text-white p-3.5 rounded-lg shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+    <div id="alert-banner" class="bg-slate-900 border-l-4 border-l-red-500 text-white p-3.5 rounded-lg shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
       <div class="flex items-center gap-3">
-        <div
-          class="w-7 h-7 rounded bg-red-600/20 text-red-400 flex items-center justify-center shrink-0 border border-red-500/30">
+        <div class="w-7 h-7 rounded bg-red-600/20 text-red-400 flex items-center justify-center shrink-0 border border-red-500/30">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
           </svg>
         </div>
         <div>
           <h4 class="font-bold text-slate-100">Alerta Meteorológico Ativo - Região Central</h4>
-          <p class="text-slate-300 mt-0.5">Elevação crítica no Córrego Retiro Saudoso. Av. Francisco Junqueira sob
-            monitoramento intensivo.</p>
+          <p class="text-slate-300 mt-0.5">Elevação crítica no Córrego Mirandinha. Av. Ville Roy sob monitoramento intensivo.</p>
         </div>
       </div>
-      <button onclick="document.getElementById('alert-banner').remove()"
-        class="text-slate-400 hover:text-white underline shrink-0">
+      <button onclick="document.getElementById('alert-banner').remove()" class="text-slate-400 hover:text-white underline shrink-0">
         Fechar
       </button>
     </div>
@@ -158,10 +128,9 @@
 
       <!-- KPI CARDS -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-
+        
         <!-- LEVEL 1: NORMAL -->
-        <div
-          class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm border-l-4 border-l-emerald-500 flex justify-between items-start">
+        <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm border-l-4 border-l-emerald-500 flex justify-between items-start">
           <div>
             <div class="flex items-center gap-1.5 mb-1">
               <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -173,8 +142,7 @@
         </div>
 
         <!-- LEVEL 2: ATENÇÃO -->
-        <div
-          class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm border-l-4 border-l-amber-500 flex justify-between items-start">
+        <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm border-l-4 border-l-amber-500 flex justify-between items-start">
           <div>
             <div class="flex items-center gap-1.5 mb-1">
               <span class="w-2 h-2 rounded-full bg-amber-500"></span>
@@ -186,8 +154,7 @@
         </div>
 
         <!-- LEVEL 3: ALAGAMENTO -->
-        <div
-          class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm border-l-4 border-l-red-500 flex justify-between items-start">
+        <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm border-l-4 border-l-red-500 flex justify-between items-start">
           <div>
             <div class="flex items-center gap-1.5 mb-1">
               <span class="w-2 h-2 rounded-full bg-red-500"></span>
@@ -199,8 +166,7 @@
         </div>
 
         <!-- LEVEL 4: CRÍTICO -->
-        <div
-          class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm text-white border-l-4 border-l-slate-400 flex justify-between items-start">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm text-white border-l-4 border-l-slate-400 flex justify-between items-start">
           <div>
             <div class="flex items-center gap-1.5 mb-1">
               <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
@@ -217,30 +183,26 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
         <!-- LEAFLET MAP CONTAINER -->
-        <div
-          class="lg:col-span-2 bg-white border border-slate-200/80 rounded-xl p-3.5 flex flex-col h-[500px] shadow-sm">
+        <div class="lg:col-span-2 bg-white border border-slate-200/80 rounded-xl p-3.5 flex flex-col h-[500px] shadow-sm">
           <div class="flex justify-between items-center mb-2.5 px-1">
             <div>
               <h2 class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
                 <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                 </svg>
                 Telemetria em Tempo Real
               </h2>
             </div>
-
-            <button onclick="openRegisterModal()"
-              class="text-xs px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-md transition-all flex items-center gap-1 shrink-0">
+            
+            <button onclick="openRegisterModal()" class="text-xs px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-md transition-all flex items-center gap-1 shrink-0">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
               </svg>
               Adicionar Ponto
             </button>
           </div>
-
+          
           <div id="map" class="w-full flex-1 rounded-lg border border-slate-200 z-10 cursor-crosshair"></div>
         </div>
 
@@ -250,12 +212,10 @@
             <div class="flex justify-between items-start mb-3 border-b border-slate-100 pb-2.5 gap-2">
               <div>
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sensor Selecionado</span>
-                <h3 class="text-base font-bold text-slate-900 leading-snug" id="selected-name">Av. Francisco Junqueira x
-                  Av. Maurílio Biagi</h3>
-                <p class="text-xs text-slate-500" id="selected-address">Córrego Retiro Saudoso - Centro</p>
+                <h3 class="text-base font-bold text-slate-900 leading-snug" id="selected-name">Av. Ville Roy x Rua das Guianas</h3>
+                <p class="text-xs text-slate-500" id="selected-address">Córrego Mirandinha - Centro</p>
               </div>
-              <span id="selected-status-badge"
-                class="px-2 py-0.5 bg-slate-900 text-white text-[10px] font-bold rounded tracking-wider uppercase shrink-0">CRÍTICO</span>
+              <span id="selected-status-badge" class="px-2 py-0.5 bg-slate-900 text-white text-[10px] font-bold rounded tracking-wider uppercase shrink-0">CRÍTICO</span>
             </div>
 
             <!-- WATER LEVEL METRICS -->
@@ -266,8 +226,7 @@
                   <span class="text-slate-900 font-bold" id="selected-level-text">95% (3.40m)</span>
                 </div>
                 <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
-                  <div id="selected-progress-bar" class="h-full bg-slate-900 rounded-full transition-all duration-500"
-                    style="width: 95%"></div>
+                  <div id="selected-progress-bar" class="h-full bg-slate-900 rounded-full transition-all duration-500" style="width: 95%"></div>
                 </div>
               </div>
 
@@ -285,8 +244,7 @@
 
             <!-- MINI CHART -->
             <div class="mb-2">
-              <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Histórico (Últimas 6h)
-              </h4>
+              <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Histórico (Últimas 6h)</h4>
               <div class="h-28">
                 <canvas id="dashMiniChart"></canvas>
               </div>
@@ -294,20 +252,16 @@
           </div>
 
           <div class="pt-2 space-y-2">
-            <button onclick="triggerDefenseAlert()"
-              class="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center gap-1.5 text-xs">
+            <button onclick="triggerDefenseAlert()" class="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center gap-1.5 text-xs">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
               </svg>
               Notificar Defesa Civil
             </button>
 
-            <button onclick="deleteSelectedSensor()"
-              class="w-full py-1.5 bg-white hover:bg-slate-50 text-slate-600 hover:text-red-600 border border-slate-200 font-medium rounded-lg transition-all flex items-center justify-center gap-1 text-xs">
+            <button onclick="deleteSelectedSensor()" class="w-full py-1.5 bg-white hover:bg-slate-50 text-slate-600 hover:text-red-600 border border-slate-200 font-medium rounded-lg transition-all flex items-center justify-center gap-1 text-xs">
               <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
               </svg>
               Excluir Ponto
             </button>
@@ -329,8 +283,7 @@
         <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm">
           <div class="flex justify-between items-center mb-3">
             <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Histórico Temporal (m)</h3>
-            <span
-              class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Linha</span>
+            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Linha</span>
           </div>
           <div class="h-56">
             <canvas id="chartLineTrend"></canvas>
@@ -340,8 +293,7 @@
         <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm">
           <div class="flex justify-between items-center mb-3">
             <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Precipitação Acumulada (mm/24h)</h3>
-            <span
-              class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Barras</span>
+            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Barras</span>
           </div>
           <div class="h-56">
             <canvas id="chartBarRainfall"></canvas>
@@ -351,8 +303,7 @@
         <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm">
           <div class="flex justify-between items-center mb-3">
             <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Distribuição por Alerta</h3>
-            <span
-              class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Rosca</span>
+            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Rosca</span>
           </div>
           <div class="h-56 flex items-center justify-center">
             <canvas id="chartDonutStatus"></canvas>
@@ -362,8 +313,7 @@
         <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm">
           <div class="flex justify-between items-center mb-3">
             <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider">Vazão Comparativa (m³/s)</h3>
-            <span
-              class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Área</span>
+            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">Área</span>
           </div>
           <div class="h-56">
             <canvas id="chartAreaFlow"></canvas>
@@ -384,9 +334,7 @@
           <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Responsáveis Técnicos</h3>
 
           <div class="bg-white border border-slate-200/80 rounded-lg p-3 shadow-sm flex items-center gap-3">
-            <div
-              class="w-8 h-8 rounded-md bg-slate-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
-              RU</div>
+            <div class="w-8 h-8 rounded-md bg-slate-900 text-white font-bold text-xs flex items-center justify-center shrink-0">RU</div>
             <div>
               <h4 class="font-bold text-xs text-slate-900">Ruan</h4>
               <p class="text-[11px] text-slate-500">Arquitetura de Software</p>
@@ -394,9 +342,7 @@
           </div>
 
           <div class="bg-white border border-slate-200/80 rounded-lg p-3 shadow-sm flex items-center gap-3">
-            <div
-              class="w-8 h-8 rounded-md bg-slate-800 text-white font-bold text-xs flex items-center justify-center shrink-0">
-              LU</div>
+            <div class="w-8 h-8 rounded-md bg-slate-800 text-white font-bold text-xs flex items-center justify-center shrink-0">LU</div>
             <div>
               <h4 class="font-bold text-xs text-slate-900">Lucas</h4>
               <p class="text-[11px] text-slate-500">Desenvolvimento IoT</p>
@@ -404,9 +350,7 @@
           </div>
 
           <div class="bg-white border border-slate-200/80 rounded-lg p-3 shadow-sm flex items-center gap-3">
-            <div
-              class="w-8 h-8 rounded-md bg-slate-700 text-white font-bold text-xs flex items-center justify-center shrink-0">
-              LZ</div>
+            <div class="w-8 h-8 rounded-md bg-slate-700 text-white font-bold text-xs flex items-center justify-center shrink-0">LZ</div>
             <div>
               <h4 class="font-bold text-xs text-slate-900">Luiz</h4>
               <p class="text-[11px] text-slate-500">Engenharia Frontend</p>
@@ -414,9 +358,7 @@
           </div>
 
           <div class="bg-white border border-slate-200/80 rounded-lg p-3 shadow-sm flex items-center gap-3">
-            <div
-              class="w-8 h-8 rounded-md bg-slate-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
-              GU</div>
+            <div class="w-8 h-8 rounded-md bg-slate-600 text-white font-bold text-xs flex items-center justify-center shrink-0">GU</div>
             <div>
               <h4 class="font-bold text-xs text-slate-900">Guilherme</h4>
               <p class="text-[11px] text-slate-500">Infraestrutura & Dados</p>
@@ -438,27 +380,22 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Nome Completo</label>
-                <input type="text" required placeholder="Ex: Carlos Eduardo"
-                  class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all" />
+                <input type="text" required placeholder="Ex: Carlos Eduardo" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"/>
               </div>
               <div>
                 <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">E-mail Corporativo</label>
-                <input type="email" required placeholder="carlos@defesacivil.sp.gov.br"
-                  class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all" />
+                <input type="email" required placeholder="carlos@defesacivil.rr.gov.br" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"/>
               </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Órgão /
-                  Departamento</label>
-                <input type="text" required placeholder="Ex: Defesa Civil SP"
-                  class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all" />
+                <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Órgão / Departamento</label>
+                <input type="text" required placeholder="Ex: Defesa Civil RR" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"/>
               </div>
               <div>
                 <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Tipo de Ocorrência</label>
-                <select required
-                  class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all text-slate-800">
+                <select required class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all text-slate-800">
                   <option value="support">Suporte Operacional</option>
                   <option value="new_sensor">Solicitação de Novo Sensor</option>
                   <option value="calibration">Calibração de Equipamento</option>
@@ -469,18 +406,15 @@
 
             <div>
               <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Descrição</label>
-              <textarea required rows="3" placeholder="Descreva os detalhes da ocorrência..."
-                class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"></textarea>
+              <textarea required rows="3" placeholder="Descreva os detalhes da ocorrência..." class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all"></textarea>
             </div>
 
-            <button type="submit"
-              class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg text-xs transition-all shadow-sm">
+            <button type="submit" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg text-xs transition-all shadow-sm">
               Enviar Chamado
             </button>
           </form>
 
-          <div id="contactSuccessMsg"
-            class="hidden mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs font-medium">
+          <div id="contactSuccessMsg" class="hidden mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs font-medium">
             Mensagem registrada com sucesso. A equipe técnica responderá em breve.
           </div>
         </div>
@@ -490,18 +424,17 @@
   </main>
 
   <!-- MODAL: REGISTER NEW SENSOR POINT -->
-  <div id="registerModal"
-    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div id="registerModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] hidden flex items-center justify-center p-4">
     <div class="bg-white border border-slate-200 rounded-xl max-w-md w-full p-5 shadow-lg relative">
-
+      
       <div class="flex justify-between items-center pb-2.5 border-b border-slate-100 mb-3.5">
         <div>
           <h3 class="text-base font-bold text-slate-900">Cadastrar Ponto de Telemetria</h3>
-          <p class="text-[11px] text-slate-500">Adicionar novo dispositivo IoT na rede de Ribeirão Preto</p>
+          <p class="text-[11px] text-slate-500">Adicionar novo dispositivo IoT na rede de Boa Vista</p>
         </div>
         <button onclick="closeRegisterModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-md">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
           </svg>
         </button>
       </div>
@@ -509,39 +442,33 @@
       <form id="sensorForm" onsubmit="handleSensorRegister(event)" class="space-y-3">
         <div>
           <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Identificação / Local</label>
-          <input type="text" id="sensor-name" required placeholder="Ex: Av. Caramuru - Ponte 03"
-            class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900" />
+          <input type="text" id="sensor-name" required placeholder="Buscando endereço..." class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"/>
         </div>
 
         <div>
           <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Referência / Bairro</label>
-          <input type="text" id="sensor-address" required placeholder="Ex: Córrego Luzitana - Alto da Boa Vista"
-            class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900" />
+          <input type="text" id="sensor-address" required placeholder="Buscando bairro..." class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"/>
         </div>
 
         <div class="grid grid-cols-2 gap-2.5">
           <div>
             <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Latitude</label>
-            <input type="number" step="any" id="sensor-lat" required value="-21.1850"
-              class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg font-mono focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900" />
+            <input type="number" step="any" id="sensor-lat" required value="2.8202" class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg font-mono focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"/>
           </div>
           <div>
             <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Longitude</label>
-            <input type="number" step="any" id="sensor-lng" required value="-47.8180"
-              class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg font-mono focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900" />
+            <input type="number" step="any" id="sensor-lng" required value="-60.6719" class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg font-mono focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"/>
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-2.5">
           <div>
             <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Cota Máxima (m)</label>
-            <input type="number" step="0.1" id="sensor-max" required value="3.5"
-              class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900" />
+            <input type="number" step="0.1" id="sensor-max" required value="3.5" class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"/>
           </div>
           <div>
             <label class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Status Inicial</label>
-            <select id="sensor-status" required
-              class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900">
+            <select id="sensor-status" required class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900">
               <option value="verde">Nível 1 - Normal (Verde)</option>
               <option value="amarelo">Nível 2 - Atenção (Amarelo)</option>
               <option value="vermelho">Nível 3 - Alagamento (Vermelho)</option>
@@ -551,12 +478,10 @@
         </div>
 
         <div class="pt-2 flex justify-end gap-2">
-          <button type="button" onclick="closeRegisterModal()"
-            class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-xs transition-all">
+          <button type="button" onclick="closeRegisterModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-xs transition-all">
             Cancelar
           </button>
-          <button type="submit"
-            class="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-lg text-xs transition-all shadow-sm">
+          <button type="submit" id="btn-salvar-registro" class="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-lg text-xs transition-all shadow-sm">
             Salvar Registro
           </button>
         </div>
@@ -565,8 +490,7 @@
   </div>
 
   <!-- TOAST NOTIFICATION -->
-  <div id="toast"
-    class="fixed bottom-4 right-4 bg-slate-900 text-white text-xs px-3.5 py-2.5 rounded-lg shadow-md z-50 hidden flex items-center gap-2 border border-slate-800">
+  <div id="toast" class="fixed bottom-4 right-4 bg-slate-900 text-white text-xs px-3.5 py-2.5 rounded-lg shadow-md z-[9999] hidden flex items-center gap-2 border border-slate-800">
     <span id="toast-text">Notificação enviada</span>
   </div>
 
@@ -604,13 +528,14 @@
       }
     }
 
-    const sensorsData = [
+    // Dados baseados em Boa Vista, RR
+    let sensorsData = [
       {
         id: 1,
-        name: 'Região Central de Boa Vista',
-        address: 'Centro - Boa Vista, RR',
+        name: 'Av. Ville Roy x Rua das Guianas',
+        address: 'Córrego Mirandinha - Centro',
         lat: 2.8235,
-        lng: -60.6758,
+        lng: -60.6753,
         status: 'preto',
         levelPct: 95,
         levelMeters: '3.40m',
@@ -619,10 +544,10 @@
       },
       {
         id: 2,
-        name: 'Região do Mecejana',
-        address: 'Mecejana - Boa Vista, RR',
-        lat: 2.8140,
-        lng: -60.7040,
+        name: 'Av. Carlos Pereira de Melo',
+        address: 'Caimbé',
+        lat: 2.8185,
+        lng: -60.6853,
         status: 'vermelho',
         levelPct: 82,
         levelMeters: '2.85m',
@@ -631,10 +556,10 @@
       },
       {
         id: 3,
-        name: 'Região do Caçari',
-        address: 'Caçari - Boa Vista, RR',
-        lat: 2.8350,
-        lng: -60.6530,
+        name: 'Av. Centenário',
+        address: 'Cinturão Verde',
+        lat: 2.8055,
+        lng: -60.6913,
         status: 'vermelho',
         levelPct: 76,
         levelMeters: '2.40m',
@@ -643,10 +568,10 @@
       },
       {
         id: 4,
-        name: 'Região Treze de Setembro',
-        address: 'Treze de Setembro - Boa Vista, RR',
-        lat: 2.8080,
-        lng: -60.6810,
+        name: 'Praça das Águas',
+        address: 'Centro',
+        lat: 2.8345,
+        lng: -60.6733,
         status: 'amarelo',
         levelPct: 58,
         levelMeters: '1.90m',
@@ -655,10 +580,10 @@
       },
       {
         id: 5,
-        name: 'Região do Conjunto Cidadão',
-        address: 'Conjunto Cidadão - Boa Vista, RR',
-        lat: 2.7700,
-        lng: -60.7200,
+        name: 'Av. Venezuela',
+        address: 'Mecejana',
+        lat: 2.8255,
+        lng: -60.6903,
         status: 'verde',
         levelPct: 15,
         levelMeters: '0.45m',
@@ -669,6 +594,7 @@
 
     let currentSelectedSensorId = 1;
     let map;
+    // Map armazenará o marker e o circulo de cada id
     const markersMap = new Map();
 
     function updateKPICounts() {
@@ -684,57 +610,71 @@
     }
 
     function initMap() {
-      // Centro de Boa Vista - Roraima
-      const centroBoaVista = [2.82032, -60.67196];
-
-      // Limites geográficos aproximados de Boa Vista
-      const limitesBoaVista = L.latLngBounds(
-        [2.55, -61.00], // Sudoeste
-        [3.10, -60.35]  // Nordeste
+      // Limites geográficos de Boa Vista
+      const bounds = L.latLngBounds(
+          [2.58425, -60.98545], // Sudoeste
+          [2.99828, -60.40583]  // Nordeste
       );
 
-      // Mantém o mapa original do OpenStreetMap e ajusta apenas
-      // centro, zoom e limites de navegação.
       map = L.map('map', {
-        center: centroBoaVista,
-        zoom: 13,          // Zoom inicial
-        minZoom: 11,       // Zoom mínimo
-        maxZoom: 19,       // Zoom máximo
-        zoomControl: true, // Botões + e - originais do Leaflet
-        fullscreenControl: true, // Zoom Plugin Leaflet
-        maxBounds: limitesBoaVista,
-        maxBoundsViscosity: 1.0
+          center: [2.82027, -60.67197], // Centro de Boa Vista
+          zoom: 13,
+          maxBounds: bounds,
+          maxBoundsViscosity: 1.0,
+          minZoom: 12,
+          maxZoom: 18,
+          fullscreenControl: true // Habilita o botão de Fullscreen
       });
 
-      // Mapa original: ruas (OpenStreetMap)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors',
-        maxZoom: 19
+        maxZoom: 18
       }).addTo(map);
 
-      // Ao clicar, preenche as coordenadas para cadastrar um sensor
-      map.on('click', function (e) {
+      // Evento de clique com Busca de Endereço Automática (Geocoding Reverso)
+      map.on('click', async function(e) {
         const lat = e.latlng.lat.toFixed(6);
         const lng = e.latlng.lng.toFixed(6);
-
+        
         document.getElementById('sensor-lat').value = lat;
         document.getElementById('sensor-lng').value = lng;
-        document.getElementById('sensor-name').value = `Ponto BV (${lat}, ${lng})`;
-        document.getElementById('sensor-address').value = 'Boa Vista - Roraima';
-
+        
+        document.getElementById('sensor-name').value = 'Buscando endereço...';
+        document.getElementById('sensor-address').value = 'Buscando bairro...';
+        document.getElementById('btn-salvar-registro').disabled = true;
+        
         openRegisterModal();
-        showToast(`Coordenadas salvas: ${lat}, ${lng}`);
+        showToast('Capturando coordenadas. Buscando o endereço no mapa...');
+
+        try {
+          // Requisição para a API pública do Nominatim (OpenStreetMap)
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+          const data = await response.json();
+
+          if (data && data.address) {
+            // Tenta pegar a rua, caso não tenha, pega uma referência próxima
+            const rua = data.address.road || data.address.pedestrian || data.address.residential || 'Rua desconhecida';
+            // Tenta pegar o bairro
+            const bairro = data.address.suburb || data.address.neighbourhood || data.address.city_district || 'Boa Vista';
+
+            document.getElementById('sensor-name').value = rua;
+            document.getElementById('sensor-address').value = bairro;
+            showToast('Endereço encontrado com sucesso!');
+          } else {
+            throw new Error('Endereço não retornado');
+          }
+        } catch (error) {
+          console.error("Erro no geocoding:", error);
+          document.getElementById('sensor-name').value = `Ponto BV (${lat.slice(0, 6)}, ${lng.slice(0, 7)})`;
+          document.getElementById('sensor-address').value = 'Endereço não mapeado';
+          showToast('Endereço não encontrado. Preencha manualmente.');
+        } finally {
+          document.getElementById('btn-salvar-registro').disabled = false;
+        }
       });
 
-      // Mantém os marcadores e indicadores originais do sistema
       sensorsData.forEach(sensor => addSensorMarker(sensor));
       updateKPICounts();
-
-      // Corrige a renderização e reafirma o centro/zoom após carregar
-      setTimeout(() => {
-        map.invalidateSize();
-        map.setView(centroBoaVista, 13);
-      }, 200);
     }
 
     function createCustomPinIcon(status) {
@@ -746,8 +686,8 @@
       if (status === 'vermelho') { bgClass = 'bg-red-500'; pulse = true; }
       if (status === 'preto') { bgClass = 'bg-slate-900'; pulse = true; }
 
-      const pulseHtml = pulse
-        ? `<div class="absolute w-6 h-6 ${bgClass} opacity-30 rounded-full pulse-animation"></div>`
+      const pulseHtml = pulse 
+        ? `<div class="absolute w-6 h-6 ${bgClass} opacity-30 rounded-full pulse-animation"></div>` 
         : '';
 
       return L.divIcon({
@@ -763,7 +703,15 @@
     function addSensorMarker(sensor) {
       const icon = createCustomPinIcon(sensor.status);
       const marker = L.marker([sensor.lat, sensor.lng], { icon: icon }).addTo(map);
-
+      
+      // Adicionando o círculo de 1000m (1km) em volta do marcador
+      const circulo = L.circle([sensor.lat, sensor.lng], {
+          color: '#3b82f6',      // Borda (azul tailwind)
+          fillColor: '#60a5fa',  // Preenchimento (azul mais claro)
+          fillOpacity: 0.15,
+          radius: 1000           // 1000 metros = 1km
+      }).addTo(map);
+      
       const popupHtml = `
         <div class="text-xs p-1.5 space-y-1">
           <strong class="text-slate-900 font-bold block">${sensor.name}</strong>
@@ -781,7 +729,8 @@
         updateSelectedPoint(sensor);
       });
 
-      markersMap.set(sensor.id, marker);
+      // Salvamos as duas referências para poder apagar ambas depois
+      markersMap.set(sensor.id, { marker: marker, circulo: circulo });
     }
 
     function updateSelectedPoint(sensor) {
@@ -798,7 +747,7 @@
       bar.style.width = sensor.levelPct + '%';
 
       const badge = document.getElementById('selected-status-badge');
-
+      
       if (sensor.status === 'verde') {
         badge.className = "px-2 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded tracking-wider uppercase shrink-0";
         badge.innerText = "NORMAL";
@@ -830,9 +779,10 @@
       if (!sensorToDelete) return;
 
       if (confirm(`Confirmar a exclusão do ponto "${sensorToDelete.name}"?`)) {
-        const marker = markersMap.get(id);
-        if (marker) {
-          map.removeLayer(marker);
+        const elements = markersMap.get(id);
+        if (elements) {
+          map.removeLayer(elements.marker);
+          map.removeLayer(elements.circulo); // Remove o círculo junto com o pino
           markersMap.delete(id);
         }
 
@@ -903,7 +853,7 @@
 
     function handleSensorRegister(e) {
       e.preventDefault();
-
+      
       const name = document.getElementById('sensor-name').value;
       const address = document.getElementById('sensor-address').value;
       const lat = parseFloat(document.getElementById('sensor-lat').value);
@@ -924,7 +874,7 @@
         lng: lng,
         status: status,
         levelPct: pct,
-        levelMeters: `${(maxLevel * (pct / 100)).toFixed(2)}m`,
+        levelMeters: `${(maxLevel * (pct / 100)).toFixed(2)}m`, 
         flow: '22.0 m³/s',
         updated: 'Agora mesmo'
       };
@@ -972,19 +922,19 @@
           labels: ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
           datasets: [
             {
-              label: 'Córrego Retiro Saudoso',
+              label: 'Córrego Mirandinha',
               data: [0.8, 1.0, 1.4, 2.2, 2.9, 3.2, 3.4],
               borderColor: '#0f172a',
               borderWidth: 2
             },
             {
-              label: 'Córrego Luzitana',
+              label: 'Caimbé',
               data: [0.5, 0.7, 1.1, 1.8, 2.3, 2.7, 2.85],
               borderColor: '#ef4444',
               borderWidth: 2
             },
             {
-              label: 'Córrego Tanquinho',
+              label: 'Cinturão Verde',
               data: [0.4, 0.6, 0.9, 1.4, 1.9, 2.2, 2.4],
               borderColor: '#f59e0b',
               borderWidth: 2
@@ -1005,7 +955,7 @@
       new Chart(document.getElementById('chartBarRainfall').getContext('2d'), {
         type: 'bar',
         data: {
-          labels: ['Centro', 'Ipiranga', 'Alto Boa Vista', 'Campos Elíseos', 'Fiúsa', 'Vila Tibério'],
+          labels: ['Centro', 'Cinturão V.', 'Caimbé', 'Mecejana', 'Caçari', 'Bairro dos Estados'],
           datasets: [{
             label: 'Precipitação (mm)',
             data: [84, 72, 65, 58, 24, 69],
@@ -1049,7 +999,7 @@
           labels: ['12h', '13h', '14h', '15h', '16h', '17h', '18h'],
           datasets: [
             {
-              label: 'Retiro Saudoso (m³/s)',
+              label: 'Mirandinha (m³/s)',
               data: [12, 18, 25, 34, 42, 46, 48.2],
               borderColor: '#1d4ed8',
               backgroundColor: 'rgba(29, 78, 216, 0.08)',
@@ -1057,7 +1007,7 @@
               tension: 0.3
             },
             {
-              label: 'Córrego Luzitana (m³/s)',
+              label: 'Caimbé (m³/s)',
               data: [8, 12, 19, 24, 30, 33, 35.1],
               borderColor: '#64748b',
               backgroundColor: 'rgba(100, 116, 139, 0.04)',
@@ -1078,12 +1028,11 @@
       });
     }
 
-    window.onload = function () {
+    window.onload = function() {
       initMap();
       initDashMiniChart();
       updateSelectedPoint(sensorsData[0]);
     };
   </script>
 </body>
-
 </html>
